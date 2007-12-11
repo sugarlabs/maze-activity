@@ -1,0 +1,17 @@
+activity/activity-maze.svg
+activity/activity.info
+activity.py
+game.py
+maze.py
+olpcgames/__init__.py
+olpcgames/activity.py
+olpcgames/camera.py
+olpcgames/canvas.py
+olpcgames/eventwrap.py
+olpcgames/gtkEvent.py
+olpcgames/mesh.py
+olpcgames/pangofont.py
+olpcgames/tubeconn.py
+olpcgames/util.py
+olpcgames/video.py
+setup.py

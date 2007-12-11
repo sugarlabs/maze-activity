@@ -1,0 +1,7 @@
+[Activity]
+name = Maze
+service_name = vu.lux.olpc.Maze
+class = activity.MazeActivity
+icon = activity-maze
+activity_version = 2
+show_launcher = yes
