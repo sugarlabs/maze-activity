@@ -1,3 +1,5 @@
+from sugar.graphics.icon import Icon
+from sugar.graphics.xocolor import XoColor
 
 class Player:
     def __init__(self, buddy):

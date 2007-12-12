@@ -3,6 +3,8 @@
 # Maze.activity
 # A simple multi-player maze game for the XO laptop.
 #
+# Special thanks to Brendan Donohoe for the icon.
+#
 # Copyright (C) 2007  Joshua Minor
 # 
 #     This program is free software; you can redistribute it and/or modify
@@ -217,6 +219,7 @@ class MazeGame:
         # lets draw once before we enter the event loop
         self.draw()
         pygame.display.flip()
+        clock = pygame.time.Clock()
         
         while self.running:
             # is there anything to animate?
@@ -237,7 +240,9 @@ class MazeGame:
             self.draw()
             
             pygame.display.flip()
-            pygame.time.wait(1000/24)
+            # don't animate faster than 12 frames per second
+            # this keeps the speed reasonable and limits cpu usage
+            clock.tick(12)
 
     def harder(self):
         """Make a new maze that is harder than the current one."""
