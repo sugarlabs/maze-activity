@@ -5,7 +5,7 @@
 ]>
 <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
 	 width="50px" height="50px" viewBox="0 0 50 50" enable-background="new 0 0 50 50" xml:space="preserve">
-<path style="fill:&fill_color;;stroke:&stroke_color;;stroke-width:3.5" d="M49,25H24.497v10.188H12.749L12.75,43H7.001V30H18.75V19.5H31V7.25h12
+<path style="fill:&fill_color;;stroke:&stroke_color;;stroke-width:2.5" d="M49,25H24.497v10.188H12.749L12.75,43H7.001V30H18.75V19.5H31V7.25h12
 	v6.25h-6v6h12L49.001,1H49H25v0.002V13.5h-6.25V1H1v6h11.75v17H7.001V12.75h-6L1,43v6h17.749v-7.812h5.749L24.497,49h0.001v0.001
 	L37.562,49v-6h-7.064l-0.002-12h12.505l0.001,18.001h6L49,25z"/>
 </svg>

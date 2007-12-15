@@ -84,6 +84,7 @@ class MazeGame:
         self.start_time = int(time.time())
         self.maze = Maze(self.start_time, int(9*self.aspectRatio), 9)
         self.reset()
+        self.frame = 0
 
     def reset(self):
         """Reset the game state.  Everyone starts in the top-left.
@@ -219,9 +220,10 @@ class MazeGame:
         # lets draw once before we enter the event loop
         self.draw()
         pygame.display.flip()
-        clock = pygame.time.Clock()
+        #clock = pygame.time.Clock()
         
         while self.running:
+            self.frame += 1
             # is there anything to animate?
             movement = False
             for player in self.players.values():
@@ -240,9 +242,10 @@ class MazeGame:
             self.draw()
             
             pygame.display.flip()
-            # don't animate faster than 12 frames per second
+            # don't animate faster than about 20 frames per second
             # this keeps the speed reasonable and limits cpu usage
-            clock.tick(12)
+            pygame.time.wait(1000/20)
+            #clock.tick(20) doesn't play nice when we use pygame.event.wait()
 
     def harder(self):
         """Make a new maze that is harder than the current one."""
@@ -324,7 +327,9 @@ class MazeGame:
         pygame.draw.rect(self.screen, self.GOAL_COLOR, rect, 0)
 
         # draw all remote players
-        for player in self.players.values():
+        remotePlayers = list(self.players.values())
+        remotePlayers.remove(self.localplayer)
+        for player in remotePlayers:
             self.drawPlayer(player)
 
         # draw the local player last so he/she will show up on top
