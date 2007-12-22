@@ -1,6 +1,9 @@
 """Implements bridge connection between Sugar/GTK and PyGame"""
 import os
 import sys
+import logging
+log = logging.getLogger( 'olpcgames.canvas' )
+#log.setLevel( logging.DEBUG )
 import threading
 from pprint import pprint
 
@@ -10,11 +13,11 @@ import gtk
 import gobject
 import pygame
 
-from olpcgames import gtkEvent, video
+from olpcgames import gtkEvent, util
 
 __all__ = ['PyGameCanvas']
 
-class PyGameCanvas(gtk.EventBox):
+class PyGameCanvas(gtk.Layout):
     """Canvas providing bridge methods to run PyGame in GTK
     
     The PyGameCanvas creates a secondary thread in which the Pygame instance will 
@@ -54,7 +57,7 @@ class PyGameCanvas(gtk.EventBox):
         
         self._align.show()
         
-        self.add(self._align)
+        self.put(self._align, 0,0)
         
         # Construct a gtkEvent.Translator
         self._translator = gtkEvent.Translator(self, self._inner_evb)
@@ -96,16 +99,26 @@ class PyGameCanvas(gtk.EventBox):
     def _start(self, fn):
         """The method that actually runs in the background thread"""
         import olpcgames
-        olpcgames.widget = self
+        olpcgames.widget = olpcgames.WIDGET = self
         try:
             import sugar.activity.activity,os
         except ImportError, err:
             log.info( """Running outside Sugar""" )
         else:
-            os.chdir(sugar.activity.activity.get_bundle_path())
+            try:
+                os.chdir(sugar.activity.activity.get_bundle_path())
+            except KeyError, err:
+                pass
         
         try:
-            fn()
+            try:
+                log.info( '''Running mainloop: %s''', fn )
+                fn()
+            except Exception, err:
+                log.error(
+                    """Uncaught top-level exception: %s""",
+                    util.get_traceback( err ),
+                )
+                raise
         finally:
             gtk.main_quit()
-        

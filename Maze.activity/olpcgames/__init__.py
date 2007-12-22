@@ -14,6 +14,14 @@ full-screen view to optimise rendering.  The PyGame code will run in
 a secondary thread, with the main GTK UI running in the primary thread.
 A third "mainloop" thread will occasionally be created to handle the 
 GStreamer interface to the camera.
+
+Attributes of Note:
+
+    ACTIVITY -- if not None, then the activity instance which represents
+        this activity at the Sugar shell level.
+    WIDGET -- PygameCanvas instance, a GTK widget with an embedded
+        socket object which is a proxy for the SDL window Pygame to which
+        pygame renders.
 """
 # XXX handle configurations that are not running under Sugar and 
 # report proper errors to describe the problem, rather than letting the 
@@ -31,4 +39,4 @@ from olpcgames import pangofont
 from olpcgames import mesh
 
 ACTIVITY = None
-widget = None
+widget = WIDGET = None

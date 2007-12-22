@@ -1,8 +1,8 @@
 """Embeds the Canvas widget into a Sugar-specific Activity environment"""
 import logging
 logging.root.setLevel( logging.WARN )
-log = logging.getLogger( 'activity' )
-log.setLevel( logging.INFO )
+log = logging.getLogger( 'olpcgames.activity' )
+#log.setLevel( logging.INFO )
 
 import pygtk
 pygtk.require('2.0')

@@ -1,5 +1,3 @@
-# coding: UTF8
-
 import olpcgames
 
 class MazeActivity(olpcgames.PyGameActivity):

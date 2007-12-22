@@ -1,8 +1,13 @@
-"""Converts from GTK to Pygame events
+"""Provides substitute for Pygame's "event" module using gtkEvent
 
 Provides methods which will be substituted into Pygame in order to 
 provide the synthetic events that we will feed into the Pygame queue.
 These methods are registered by the "install" method.
+
+Extension:
+
+    last_event_time() -- returns period since the last event was produced
+        in seconds.  This can be used to create "pausing" effects for games.
 """
 import pygame
 import gtk
@@ -10,11 +15,17 @@ import Queue
 import thread
 import logging
 
-log = logging.getLogger( 'eventwrap' )
+log = logging.getLogger( 'olpcgames.eventwrap' )
 
 # This module reuses Pygame's Event, but
 # reimplements the event queue.
 from pygame.event import Event, event_name, pump as pygame_pump, get as pygame_get
+
+class Event(object):
+    """Mock pygame events"""
+    def __init__(self, type, **named):
+        self.type = type
+        self.__dict__.update( named )
 
 #print "Initializing own event.py"
 
@@ -62,22 +73,49 @@ def get():
     if pygameEvents:
         log.info( 'Raw Pygame events: %s', pygameEvents)
         eventlist.extend( pygameEvents )
-
+    if eventlist:
+        _set_last_event_time()
     return eventlist
+
+_LAST_EVENT_TIME = 0
+    
+def _set_last_event_time( time=None ):
+    """Set this as the last event time"""
+    global _LAST_EVENT_TIME
+    if time is None:
+        time = pygame.time.get_ticks()
+    _LAST_EVENT_TIME = time 
+    return time 
+    
+def last_event_time( ):
+    """Return the last event type for pausing operations in seconds"""
+    global _LAST_EVENT_TIME
+    return (pygame.time.get_ticks() - _LAST_EVENT_TIME)/1000.
 
 def poll():
     """Get the next pending event if exists. Otherwise, return pygame.NOEVENT."""
     pump()
     try:
-        return g_events.get(block=False)
+        result = g_events.get(block=False)
+        _set_last_event_time()
+        return result
     except Queue.Empty:
         return Event(pygame.NOEVENT)
 
 
-def wait():
-    """Get the next pending event, waiting if none."""
+def wait( timeout = None):
+    """Get the next pending event, wait up to timeout if none
+    
+    timeout -- if present, only wait up to timeout seconds, if we 
+        do not find an event before then, return None
+    """
     pump()
-    return g_events.get(block=True)
+    try:
+        result = g_events.get(block=True, timeout=timeout)
+        _set_last_event_time()
+        return result
+    except Queue.Empty, err:
+        return None
 
 def peek(types=None):
     """True if there is any pending event. (Unlike pygame, there's no option to

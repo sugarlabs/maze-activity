@@ -15,8 +15,9 @@ import pygame.rect, pygame.image
 import gtk
 import struct
 from pygame import surface
+from olpcgames import _cairoimage
 
-log = logging.getLogger( 'pangofont' )
+log = logging.getLogger( 'olpcgames.pangofont' )
 #log.setLevel( logging.DEBUG )
 
 # Install myself on top of pygame.font
@@ -30,8 +31,26 @@ def install():
     sys.modules["pygame.font"] = pangofont
 
 class PangoFont(object):
-    """Base class for a pygame.font.Font-like object drawn by Pango."""
-    def __init__(self, family=None, size=None, bold=False, italic=False, fd=None):
+    """Base class for a pygame.font.Font-like object drawn by Pango
+    
+    Attributes of note:
+    
+        fd -- instances Pango FontDescription object 
+        WEIGHT_* -- parameters for use with set_weight
+        STYLE_* -- parameters for use with set_style
+        
+    """
+    WEIGHT_BOLD = pango.WEIGHT_BOLD
+    WEIGHT_HEAVY = pango.WEIGHT_HEAVY
+    WEIGHT_LIGHT = pango.WEIGHT_LIGHT
+    WEIGHT_NORMAL = pango.WEIGHT_NORMAL
+    WEIGHT_SEMIBOLD = pango.WEIGHT_SEMIBOLD
+    WEIGHT_ULTRABOLD = pango.WEIGHT_ULTRABOLD
+    WEIGHT_ULTRALIGHT = pango.WEIGHT_ULTRALIGHT
+    STYLE_NORMAL = pango.STYLE_NORMAL
+    STYLE_ITALIC = pango.STYLE_ITALIC
+    STYLE_OBLIQUE = pango.STYLE_OBLIQUE
+    def __init__(self, family=None, size=None, bold=False, italic=False, underline=False, fd=None):
         """If you know what pango.FontDescription (fd) you want, pass it in as
         'fd'.  Otherwise, specify any number of family, size, bold, or italic,
         and we will try to match something up for you."""
@@ -44,13 +63,10 @@ class PangoFont(object):
                 fd.set_family(family)
             if size is not None:
                 fd.set_size(size*1000)
-
-            if bold:
-                fd.set_weight(pango.WEIGHT_BOLD)
-            if italic:
-                fd.set_style(pango.STYLE_OBLIQUE)
-
         self.fd = fd
+        self.set_bold( bold )
+        self.set_italic( italic )
+        self.set_underline( underline )
 
     def render(self, text, antialias=True, color=(255,255,255), background=None ):
         """Render the font onto a new Surface and return it.
@@ -70,6 +86,12 @@ class PangoFont(object):
         # create layout
         layout = pango.Layout(gtk.gdk.pango_context_get())
         layout.set_font_description(self.fd)
+        if self.underline:
+            attrs = layout.get_attributes()
+            if not attrs:
+                attrs = pango.AttrList()
+            attrs.insert(pango.AttrUnderline(pango.UNDERLINE_SINGLE, 0, 32767))
+            layout.set_attributes( attrs )
         layout.set_text(text)
 
         # determine pixel size
@@ -77,44 +99,23 @@ class PangoFont(object):
         ink = pygame.rect.Rect(ink)
 
         # Create a new Cairo ImageSurface
-        csrf = cairo.ImageSurface(cairo.FORMAT_ARGB32, ink.w, ink.h)
-        cctx = pangocairo.CairoContext(cairo.Context(csrf))
+        csrf,cctx = _cairoimage.newContext( ink.w, ink.h )
+        cctx = pangocairo.CairoContext(cctx)
 
         # Mangle the colors on little-endian machines. The reason for this 
         # is that Cairo writes native-endian 32-bit ARGB values whereas
         # Pygame expects endian-independent values in whatever format. So we
         # tell our users not to expect transparency here (avoiding the A issue)
         # and we swizzle all the colors around.
-        big_endian = struct.pack( '=i', 1 ) == struct.pack( '>i', 1 )
-        if hasattr(csrf,'get_data'):
-            swap = True
-        else:
-            swap = False
-        log.debug( 'big_endian: %s   swap: %s', big_endian, swap )
-        def mangle_color(color):
-            """Mange a colour depending on endian-ness, and swap-necessity
-            
-            This implementation has only been tested on an AMD64
-            machine with a get_data implementation (rather than 
-            a get_data_as_rgba implementation).
-            """
-            r,g,b = color[:3]
-            if len(color) > 3:
-                a = color[3]
-            else:
-                a = 255.0
-            if swap and not big_endian:
-                return map(_fixColorBase, (b,g,r,a) )
-            return map(_fixColorBase, (r,g,b,a) )
 
         # render onto it
         if background is not None:
-            background = mangle_color( background )
+            background = _cairoimage.mangle_color( background )
             cctx.set_source_rgba(*background)
             cctx.paint()
         
         log.debug( 'incoming color: %s', color )
-        color = mangle_color( color )
+        color = _cairoimage.mangle_color( color )
         log.debug( '  translated color: %s', color )
 
         cctx.new_path()
@@ -123,25 +124,50 @@ class PangoFont(object):
         cctx.fill()
 
         # Create and return a new Pygame Image derived from the Cairo Surface
-        if big_endian:
-            # You see, in big-endian-world, we can just use the RGB values
-            format = "ARGB"
+        return _cairoimage.asImage( csrf )
+    
+    def set_bold( self, bold=True):
+        """Set our font description's weight to "bold" or "normal"
+        
+        bold -- boolean, whether to set the value to "bold" weight or not 
+        """
+        if bold:
+            self.set_weight(  self.WEIGHT_BOLD )
         else:
-            # But with little endian, we've already swapped R and B in 
-            # mangle_color, so now just move the A
-            format = "RGBA"
-        if hasattr(csrf,'get_data'):
-            data = csrf.get_data()
+            self.set_weight(  self.WEIGHT_NORMAL )
+    def set_weight( self, weight ):
+        """Explicitly set our pango-style weight value"""
+        self.fd.set_weight(  weight )
+        return self.get_weight()
+    def get_weight( self ):
+        """Explicitly get our pango-style weight value"""
+        return self.fd.get_weight()
+    def get_bold( self ):
+        """Return whether our font's weight is bold (or above)"""
+        return self.fd.get_weight() >= pango.WEIGHT_BOLD
+    
+    def set_italic( self, italic=True ):
+        """Set our "italic" value (style)"""
+        if italic:
+            self.set_style( self.STYLE_ITALIC )
         else:
-            # XXX little-endian here, check on a big-endian machine 
-            data = csrf.get_data_as_rgba()
-            format = 'RGBA' # XXX wrong, what's with all the silly swapping!
-        try:
-            data = str(data)
-            return pygame.image.fromstring(data, (ink.w,ink.h), format)
-        except ValueError, err:
-            err.args += (len(data), ink.w*ink.h*4,format )
-            raise
+            self.set_style( self.STYLE_NORMAL )
+    def set_style( self, style ):
+        """Set our font description's pango-style"""
+        self.fd.set_style( style )
+        return self.fd.get_style()
+    def get_style( self ):
+        """Get our font description's pango-style"""
+        return self.fd.get_style()
+    def get_italic( self ):
+        """Return whether we are currently italicised"""
+        return self.fd.get_style() == self.STYLE_ITALIC # what about oblique?
+    
+    def set_underline( self, underline=True ):
+        """Set our current underlining properly"""
+        self.underline = underline
+    def get_underline( self ):
+        return self.underline
 
 class SysFont(PangoFont):
     """Construct a PangoFont from a font description (name), size in pixels,
@@ -251,43 +277,3 @@ def stdcolor(color):
 def _fixColorBase( v ):
     """Return a properly clamped colour in floating-point space"""
     return max((0,min((v,255.0))))/255.0
-
-if __name__ == "__main__":
-    # Simple testing code...
-    logging.basicConfig()
-    from pygame import image,display, event, sprite
-    import pygame
-    import pygame.event
-    def main():
-        display.init()
-        maxX,maxY = display.list_modes()[0] 
-        screen = display.set_mode( (maxX/2, maxY/2 ) )
-        background = pygame.Surface(screen.get_size())
-        background = background.convert()
-        background.fill((255, 255,255))
-        
-        screen.blit(background, (0, 0))
-        display.flip()
-        
-        clock = pygame.time.Clock()
-        
-        font = PangoFont( size=30, family='monospace' )
-        text1 = font.render( 'red', color=(255,0,0) , background=(255,255,255,0) )
-        text2 = font.render( 'green', color=(0,255,0)  )
-        text3 = font.render( 'blue', color=(0,0,255)  )
-        text4 = font.render( 'blue-trans', color=(0,0,255,128)  )
-        text5 = font.render( 'cyan-trans', color=(0,255,255,128)  )
-        while 1:
-            clock.tick( 60 )
-            for event in pygame.event.get():
-                log.debug( 'event: %s', event )
-                if event.type == pygame.QUIT:
-                    return True
-            screen.blit( text1, (20,20 ))
-            screen.blit( text2, (20,80 ))
-            screen.blit( text3, (20,140 ))
-            screen.blit( text4, (200,20 ))
-            screen.blit( text5, (200,80 ))
-            display.flip()
-    main()
-    

@@ -4,16 +4,13 @@ pygtk.require('2.0')
 import gtk
 import gobject
 import pygame
-import pygame.event as Pevent
-#PCevent = Pevent
-from olpcgames import eventwrap as PCevent
+from olpcgames import eventwrap
 import logging 
-log = logging.getLogger( 'gtkevent' )
+log = logging.getLogger( 'olpcgames.gtkevent' )
 #log.setLevel( logging.DEBUG )
 
-class MockEvent(object):
-    """Used to inject key-repeat events."""
-    
+class _MockEvent(object):
+    """Used to inject key-repeat events on the gtk side."""
     def __init__(self, keyval):
         self.keyval = keyval
 
@@ -101,7 +98,13 @@ class Translator(object):
         self.__tick_id = None
 
         #print "translator  initialized"
-        
+        mainwindow.connect( 'expose-event', self.do_expose_event )
+    def do_expose_event(self, event, widget):
+        """Handle exposure event (trigger redraw by gst)"""
+        log.info( 'Expose event: %s', event )
+        from olpcgames import eventwrap
+        eventwrap.post( eventwrap.Event( eventwrap.pygame.VIDEOEXPOSE ))
+        return True
     def hook_pygame(self):
         """Hook the various Pygame features so that we implement the event APIs"""
         # Pygame should be initialized. Hijack their key and mouse methods
@@ -114,7 +117,7 @@ class Translator(object):
         
     def _quit(self, data=None):
         self.__stopped = True
-        PCevent.post(Pevent.Event(pygame.QUIT))
+        eventwrap.post(eventwrap.Event(pygame.QUIT))
 
     def _keydown(self, widget, event):
         key = event.keyval
@@ -170,8 +173,11 @@ class Translator(object):
             self.__keystate[keycode] = type == pygame.KEYDOWN
             if type == pygame.KEYUP:
                 mod = self._keymods()
-            ukey = gtk.gdk.keyval_to_unicode(event.keyval)
-            evt = Pevent.Event(type, key=keycode, unicode=ukey, mod=mod)
+            ukey = unichr(gtk.gdk.keyval_to_unicode(event.keyval))
+            if ukey == '\000':
+                ukey = ''
+            evt = eventwrap.Event(type, key=keycode, unicode=ukey, mod=mod)
+            assert evt.key, evt
             self._post(evt)
         return True
 
@@ -193,7 +199,7 @@ class Translator(object):
         
     def _mouseevent(self, widget, event, type):
 
-        evt = Pevent.Event(type, 
+        evt = eventwrap.Event(type, 
                                              button=event.button, 
                                              pos=(event.x, event.y))
         self._post(evt)
@@ -220,7 +226,7 @@ class Translator(object):
             state & gtk.gdk.BUTTON3_MASK and 1 or 0,
         ]
         
-        evt = Pevent.Event(pygame.MOUSEMOTION,
+        evt = eventwrap.Event(pygame.MOUSEMOTION,
                                              pos=self.__mouse_pos,
                                              rel=rel,
                                              buttons=self.__button_state)
@@ -237,7 +243,7 @@ class Translator(object):
             self.__held_time_left[key] -= delta
             if self.__held_time_left[key] <= 0:
                 self.__held_time_left[key] = self.__repeat[1]
-                self._keyevent(None, MockEvent(key), pygame.KEYDOWN)
+                self._keyevent(None, _MockEvent(key), pygame.KEYDOWN)
                 
         return True
         
@@ -255,7 +261,7 @@ class Translator(object):
             
     def _post(self, evt):
         try:
-            PCevent.post(evt)
+            eventwrap.post(evt)
         except pygame.error, e:
             if str(e) == 'Event queue full':
                 print "Event queue full!"

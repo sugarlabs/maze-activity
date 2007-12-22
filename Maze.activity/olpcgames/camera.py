@@ -12,7 +12,7 @@ import pygame
 import gst
 from olpcgames.util import get_activity_root
 
-log = logging.getLogger( 'camera' )
+log = logging.getLogger( 'olpcgames.camera' )
 #log.setLevel( logging.DEBUG )
 
 CAMERA_LOAD = 9917
@@ -22,8 +22,8 @@ class CameraSprite(object):
     """Create gstreamer surface for the camera."""
     def __init__(self, x, y):
         import olpcgames
-        if olpcgames.widget:
-            self._init_video(olpcgames.widget, x, y)
+        if olpcgames.WIDGET:
+            self._init_video(olpcgames.WIDGET, x, y)
             
     def _init_video(self, widget, x, y):
         from olpcgames import video
