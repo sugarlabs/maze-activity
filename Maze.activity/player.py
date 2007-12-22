@@ -14,8 +14,12 @@ class Player:
         self.direction = (0,0)
         self.position = (1,1)
         self.previous = (1,1)
+        self.elapsed = None
     
     def animate(self, maze):
+        # if the player finished the maze, then don't move
+        if self.elapsed is not None:
+            self.direction=(0,0)
         if self.direction == (0,0):
             return self.position
         if self.canGo(self.direction, maze):

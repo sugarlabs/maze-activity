@@ -1,0 +1,92 @@
+Idea:
+	A maze game for the XO laptop.
+
+Basics:
+	Use the arrow keys to move around a maze.
+	When you get to the goal, jump to a harder maze.
+
+Collaboration:
+	Multiple players can play on the same maze.
+	The first one to the goal "wins"
+	When one player reaches the end, all players jump to the next maze.
+
+Enhancements:
+	Show XO buddy icons instead of colored dots (only for easy mazes, when icons are large).
+	Measure time-to-goal and rank players to formalize the winning condition.
+	Separate easy/hard from small/large maze.
+	Easy mazes could have extra holes punched in them to make for multiple solutions.
+	Different maze-building algorithms
+		Adjust random direction choice to favor twisty vs straight hallways
+		Add larger rooms
+	Bonus items could be sprinkled around the maze.
+		Speed up self/opponents
+		Slow down self/opponents
+		Punch extra holes
+		Move some walls - make sure there is still a valid solution
+		Teleport
+		Keys/locked doors
+		Toggle switches/doors
+	Enemies
+		Block you
+		Eat you
+	Players could block/eat each other.
+		This might require adding a "facing" to control who eats who.
+	Players could draw their own maps
+		Save, load, share
+		Would have to xfer whole map, not just random seed
+	Add multiple floors with ramps, ladders, pits, etc.
+	Add a light source at each player that reveals the map as you travel through it.
+	Add a fog that slowly fades areas you have seen already.
+	
+
+
+    self.icon = self.iconFromBuddy(buddy)
+
+def iconFromBuddy(self, buddy):
+    data = buddy.props.icon
+    fn = "/tmp/buddy.icon.jpg"
+    f = open(fn,"w")
+    f.write(data)
+    f.close()
+    # class StringFile:
+    #     def __init__(self, data):
+    #         self.data = data
+    #     def read(bytes=None):
+    #         if bytes is None:
+    #             bytes = len(self.data)
+    #         d = self.data[:bytes]
+    #         self.data = self.data[bytes:]
+    #         return d
+    # return pygame.image.load(StringFile(data)).convert_alpha()
+    img = pygame.image.load(fn)
+    img.convert_alpha()
+    return img
+
+
+
+        
+        icon = CanvasIcon(
+            icon_name='computer-xo',
+            xo_color=XoColor(buddy.props.color))
+        print icon
+        #print icon.get_pixbuf()
+        print icon.get_image()
+
+
+
+
+    icon = player.icon
+    if icon:
+        pygame.display.get_surface().blit(icon, rect)
+    else:
+
+
+
+
+
+    # self.img = self.readSVG(
+    # file = rsvg.Handle(filename)
+    # (w,h,w2,h2) = file.get_dimension_data()
+    # srf = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
+    # file.render_cairo(cairo.Context(srf))
+    # return surface.CairoSurface(srf)        

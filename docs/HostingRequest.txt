@@ -1,0 +1,88 @@
+1. Project name             : Maze
+2. Existing website, if any : http://lux.vu/blog/2007/12/11/one-maze-per-child/
+3. One-line description     : A multiplayer maze game.
+
+4. Longer description       : A multiplayer maze game that uses the olpcgames
+                            : module and pygame.
+                            :
+                            :
+
+5. URLs of similar projects :
+
+6. Committer list 
+   Please list the maintainer (lead developer) as the first entry. Only list 
+   developers who need to be given accounts so that they can commit to your
+   project's code repository, or push their own. There is no need to list
+   non-committer developers.
+
+      Username   Full name             SSH2 key URL                    E-mail
+      --------   ---------             ------------                    ------
+   #1 jminor     Joshua Minor                                          j@lux.vu
+   #2
+   #3
+      ...
+
+   If any developers don't have their SSH2 keys on the web, please attach them 
+   to the application e-mail.
+
+7. Preferred development model
+
+   [X] Central tree. Every developer can push his changes directly to the 
+       project's git tree. This is the standard model that will be familiar to 
+       CVS and Subversion users, and that tends to work well for most projects.
+
+   [ ] Maintainer-owned tree. Every developer creates his own git tree, or
+       multiple git trees. He periodically asks the maintainer to look at one
+       or more of these trees, and merge changes into the maintainer-owned,
+       "main" tree. This is the model used by the Linux kernel, and is 
+       well-suited to projects wishing to maintain a tighter control on code
+       entering the main tree.
+
+   If you choose the maintainer-owned tree model, but wish to set up some
+   shared trees where all of your project's committers can commit directly, 
+   as might be the case with a "discussion" tree, or a tree for an individual 
+   feature, you may send us such a request by e-mail, and we will set up the 
+   tree for you.
+
+8. Set up a project mailing list:
+
+   [ ] Yes, named after our project name
+   [ ] Yes, named ______________________
+   [X] No
+
+   When your project is just getting off the ground, we suggest you eschew
+   a separate mailing list and instead keep discussion about your project
+   on the main OLPC development list. This will give you more input and 
+   potentially attract more developers to your project; when the volume of 
+   messages related to your project reaches some critical mass, we can 
+   trivially create a separate mailing list for you.
+
+   If you need multiple lists, let us know. We discourage having many 
+   mailing lists for smaller projects, as this tends to
+   stunt the growth of your project community. You can always add more lists
+   later.
+
+9. Commit notifications
+
+   [ ] Notification of commits to the main tree should be e-mailed to the list
+       we chose to create above
+   [ ] A separate mailing list, <projectname>-git, should be created for commit
+       notifications
+   [X] No commit notifications, please
+
+10. Shell accounts
+
+   As a general rule, we don't provide shell accounts to developers unless 
+   there's a demonstrated need. If you have one, please explain here, and
+   list the usernames of the committers above needing shell access.
+
+11. Translation
+   [X] Set up the laptop.org Pootle server to allow translation commits to be made
+   [ ] Translation arrangements have already been made at _______________
+
+12. Notes/comments:
+	This game might fill the role of a Maze Game Template as mentioned
+here: http://wiki.laptop.org/go/Game_templates   Also, there is no text in the game
+by design, so only the title of the activity would need to be translated.  I have
+only tested it under emulation.
+

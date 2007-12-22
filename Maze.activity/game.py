@@ -81,15 +81,26 @@ class MazeGame:
         self.aspectRatio = canvas_size[0] / float(canvas_size[1])
         
         # start with a small maze
-        self.start_time = int(time.time())
-        self.maze = Maze(self.start_time, int(9*self.aspectRatio), 9)
+        self.start_time = time.time()
+        self.maze = Maze(int(self.start_time), int(9*self.aspectRatio), 9)
         self.reset()
         self.frame = 0
+        
+        self.font = pygame.font.Font(None, 30)
+        
+        # support arrow keys, game pad arrows and game pad buttons
+        self.upkeys = (pygame.K_UP, pygame.K_KP8, pygame.K_KP9)
+        self.downkeys = (pygame.K_DOWN, pygame.K_KP2, pygame.K_KP3)
+        self.leftkeys = (pygame.K_LEFT, pygame.K_KP4, pygame.K_KP7)
+        self.rightkeys = (pygame.K_RIGHT, pygame.K_KP6, pygame.K_KP1)
+        self.allkeys = self.upkeys + self.downkeys + self.leftkeys + self.rightkeys
 
     def reset(self):
         """Reset the game state.  Everyone starts in the top-left.
         The goal starts in the bottom-right corner."""
         self.running = True
+        self.start_time = time.time()
+        self.finish_time = None
         for player in self.players.values():
             player.reset()
         self.goal = (self.maze.width-2, self.maze.height-2)
@@ -125,19 +136,19 @@ class MazeGame:
                 self.harder()
             elif event.key == pygame.K_MINUS:
                 self.easier()
-            elif event.key == pygame.K_UP:
+            elif event.key in self.upkeys:
                 self.localplayer.direction=(0,-1)
                 if len(self.players)>1:
                     mesh.broadcast("move:%d,%d,%d,%d" % (self.localplayer.position[0], self.localplayer.position[1], self.localplayer.direction[0], self.localplayer.direction[1]))
-            elif event.key == pygame.K_DOWN:
+            elif event.key in self.downkeys:
                 self.localplayer.direction=(0,1)
                 if len(self.players)>1:
                     mesh.broadcast("move:%d,%d,%d,%d" % (self.localplayer.position[0], self.localplayer.position[1], self.localplayer.direction[0], self.localplayer.direction[1]))
-            elif event.key == pygame.K_LEFT:
+            elif event.key in self.leftkeys:
                 self.localplayer.direction=(-1,0)
                 if len(self.players)>1:
                     mesh.broadcast("move:%d,%d,%d,%d" % (self.localplayer.position[0], self.localplayer.position[1], self.localplayer.direction[0], self.localplayer.direction[1]))
-            elif event.key == pygame.K_RIGHT:
+            elif event.key in self.rightkeys:
                 self.localplayer.direction=(1,0)
                 if len(self.players)>1:
                     mesh.broadcast("move:%d,%d,%d,%d" % (self.localplayer.position[0], self.localplayer.position[1], self.localplayer.direction[0], self.localplayer.direction[1]))
@@ -206,6 +217,11 @@ class MazeGame:
                 # won't have their maps yanked out from under them when someone new joins.
                 self.maze = Maze(seed, width, height)
                 self.reset()
+        elif message.startswith("finish:"):
+            # someone finished the maze
+            elapsed = float(message[7:])
+            player.elapsed = elapsed
+            self.markPointDirty(player.position)
         else:
             # it was something I don't recognize...
             print "Message from %s: %s" % (player.nick, message)
@@ -213,27 +229,20 @@ class MazeGame:
 
     def arrowKeysPressed(self):
         keys = pygame.key.get_pressed()
-        return keys[pygame.K_UP] or keys[pygame.K_DOWN] or keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]
+        for key in self.allkeys:
+            if keys[key]:
+                return True
+        return False
 
     def run(self):
         """Run the main loop of the game."""
         # lets draw once before we enter the event loop
         self.draw()
         pygame.display.flip()
-        #clock = pygame.time.Clock()
+        clock = pygame.time.Clock()
         
         while self.running:
             self.frame += 1
-            # is there anything to animate?
-            movement = False
-            for player in self.players.values():
-                if player.direction != (0,0):
-                    movement = True
-                    break
-            if not movement:
-                # then wait for the next event
-                # so we don't waste power
-                self.processEvent(pygame.event.wait())
             # process all queued events
             for event in pygame.event.get():
                 self.processEvent(event)
@@ -244,8 +253,7 @@ class MazeGame:
             pygame.display.flip()
             # don't animate faster than about 20 frames per second
             # this keeps the speed reasonable and limits cpu usage
-            pygame.time.wait(1000/20)
-            #clock.tick(20) doesn't play nice when we use pygame.event.wait()
+            clock.tick(20)
 
     def harder(self):
         """Make a new maze that is harder than the current one."""
@@ -277,6 +285,7 @@ class MazeGame:
 
     def animate(self):
         """Animate one frame of action."""
+        
         for player in self.players.values():
             oldposition = player.position
             newposition = player.animate(self.maze)
@@ -286,8 +295,17 @@ class MazeGame:
                 if player == self.localplayer:
                     self.maze.map[player.previous[0]][player.previous[1]] = self.maze.SEEN
                     if newposition == self.goal:
-                        self.harder()
-        
+                        self.finish()
+                        
+        if self.finish_time is not None and time.time() > self.finish_time+5:
+            self.harder()
+    
+    def finish(self):
+        self.finish_time = time.time()
+        self.localplayer.elapsed = self.finish_time - self.start_time
+        if len(self.players)>1:
+            mesh.broadcast("finish:%.2f" % (self.localplayer.elapsed))
+    
     def draw(self):
         """Draw the current state of the game.
         This makes use of the dirty rectangle to reduce CPU load."""
@@ -334,6 +352,23 @@ class MazeGame:
 
         # draw the local player last so he/she will show up on top
         self.drawPlayer(self.localplayer)
+
+        # draw the elapsed time for each player that has finished
+        finishedPlayers = filter(lambda p: p.elapsed is not None, self.players.values())
+        finishedPlayers.sort(lambda a,b: cmp(a.elapsed,b.elapsed))
+        y = 0
+        for player in finishedPlayers:
+            fg, bg = player.colors
+            text = "%3.2f - %s" % (player.elapsed, player.nick)
+            textimg = self.font.render(text, 1, fg)
+            textwidth, textheight = self.font.size(text)
+            rect = pygame.Rect(8, y+4, textwidth, textheight)
+            bigrect = rect.inflate(16,8)
+            pygame.draw.rect(self.screen, bg, bigrect, 0)
+            pygame.draw.rect(self.screen, fg, bigrect, 2)
+            self.screen.blit(textimg, rect)
+            
+            y += bigrect.height + 4
 
         # clear the dirty rect so nothing will be drawn until there is a change
         self.dirtyRect = None

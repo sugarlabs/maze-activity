@@ -1,0 +1,3 @@
+#!/bin/sh
+
+zip -r dist/Maze.xo Maze.activity && scp dist/Maze.xo luxvu@lux.vu:public_html/olpc/
