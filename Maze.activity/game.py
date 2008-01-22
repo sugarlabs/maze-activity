@@ -104,6 +104,7 @@ class MazeGame:
             player.reset()
         self.goal = (self.maze.width-2, self.maze.height-2)
         self.dirtyRect = None
+        self.dirtyPoints = []
         
         # clear and mark the whole screen as dirty
         self.screen.fill((0,0,0))
@@ -120,8 +121,7 @@ class MazeGame:
     
     def markPointDirty(self, pt):
         """Mark a single point that needs to be redrawn."""
-        rect = pygame.Rect(pt[0], pt[1], 1, 1)
-        self.markRectDirty(rect)
+        self.dirtyPoints.append(pt)
         
     def processEvent(self, event):
         """Process a single pygame event.  This includes keystrokes
@@ -287,6 +287,8 @@ class MazeGame:
         
         for player in self.players.values():
             oldposition = player.position
+            if oldposition == self.goal:
+                break
             newposition = player.animate(self.maze)
             if oldposition != newposition:
                 self.markPointDirty(oldposition)
@@ -296,7 +298,8 @@ class MazeGame:
                     if newposition == self.goal:
                         self.finish()
                         
-        if self.finish_time is not None and time.time() > self.finish_time+5:
+        finish_delay = min(2 * len(self.players), 6)
+        if self.finish_time is not None and time.time() > self.finish_time+finish_delay:
             self.harder()
     
     def finish(self):
@@ -308,7 +311,7 @@ class MazeGame:
     def draw(self):
         """Draw the current state of the game.
         This makes use of the dirty rectangle to reduce CPU load."""
-        if self.dirtyRect is None:
+        if self.dirtyRect is None and len(self.dirtyPoints)==0:
             return
         
         # compute the size of the tiles given the screen size, etc.
@@ -317,27 +320,36 @@ class MazeGame:
         self.offsetX = (size[0] - self.tileSize * self.maze.width)/2
         self.offsetY = (size[1] - self.tileSize * self.maze.height)/2
         self.outline = int(self.tileSize/5)
+
+        def drawPoint(x,y):
+            rect = pygame.Rect(self.offsetX + x*self.tileSize, self.offsetY + y*self.tileSize, self.tileSize, self.tileSize)
+            if self.maze.map[x][y] == self.maze.EMPTY:
+                pygame.draw.rect(self.screen, self.EMPTY_COLOR, rect, 0)
+            elif self.maze.map[x][y] == self.maze.SOLID:
+                pygame.draw.rect(self.screen, self.SOLID_COLOR, rect, 0)
+            elif self.maze.map[x][y] == self.maze.SEEN:
+                pygame.draw.rect(self.screen, self.EMPTY_COLOR, rect, 0)
+                dot = rect.inflate(-self.outline*2, -self.outline*2)
+                pygame.draw.ellipse(self.screen, self.TRAIL_COLOR, dot, 0)
+            else:
+                pygame.draw.rect(self.screen, (0xff, 0x00, 0xff), rect, 0)
         
-        # compute the area that needs to be redrawn
-        left = max(0, self.dirtyRect.left)
-        right = min(self.maze.width, self.dirtyRect.right)
-        top = max(0, self.dirtyRect.top)
-        bottom = min(self.maze.height, self.dirtyRect.bottom)
+        # re-draw the dirty rectangle
+        if self.dirtyRect is not None:
+            # compute the area that needs to be redrawn
+            left = max(0, self.dirtyRect.left)
+            right = min(self.maze.width, self.dirtyRect.right)
+            top = max(0, self.dirtyRect.top)
+            bottom = min(self.maze.height, self.dirtyRect.bottom)
         
-        # loop over the dirty rect and draw
-        for x in range(left, right):
-            for y in range(top, bottom):
-                rect = pygame.Rect(self.offsetX + x*self.tileSize, self.offsetY + y*self.tileSize, self.tileSize, self.tileSize)
-                if self.maze.map[x][y] == self.maze.EMPTY:
-                    pygame.draw.rect(self.screen, self.EMPTY_COLOR, rect, 0)
-                elif self.maze.map[x][y] == self.maze.SOLID:
-                    pygame.draw.rect(self.screen, self.SOLID_COLOR, rect, 0)
-                elif self.maze.map[x][y] == self.maze.SEEN:
-                    pygame.draw.rect(self.screen, self.EMPTY_COLOR, rect, 0)
-                    dot = rect.inflate(-self.outline*2, -self.outline*2)
-                    pygame.draw.ellipse(self.screen, self.TRAIL_COLOR, dot, 0)
-                else:
-                    pygame.draw.rect(self.screen, (0xff, 0x00, 0xff), rect, 0)
+            # loop over the dirty rect and draw
+            for x in range(left, right):
+                for y in range(top, bottom):
+                    drawPoint(x,y)
+        
+        # re-draw the dirty points
+        for x,y in self.dirtyPoints:
+            drawPoint(x,y)
         
         # draw the goal
         rect = self.offsetX+self.goal[0]*self.tileSize, self.offsetY+self.goal[1]*self.tileSize, self.tileSize, self.tileSize
@@ -371,6 +383,7 @@ class MazeGame:
 
         # clear the dirty rect so nothing will be drawn until there is a change
         self.dirtyRect = None
+        self.dirtyPoints = []
 
     def drawPlayer(self, player):
         fg, bg = player.colors

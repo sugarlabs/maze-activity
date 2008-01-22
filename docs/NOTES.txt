@@ -10,9 +10,12 @@ Collaboration:
 	The first one to the goal "wins"
 	When one player reaches the end, all players jump to the next maze.
 
+Bugs:
+	[done] Support multiple dirty-rects to avoid performance hit when players are far apart.
+
 Enhancements:
 	Show XO buddy icons instead of colored dots (only for easy mazes, when icons are large).
-	Measure time-to-goal and rank players to formalize the winning condition.
+	[done] Measure time-to-goal and rank players to formalize the winning condition.
 	Separate easy/hard from small/large maze.
 	Easy mazes could have extra holes punched in them to make for multiple solutions.
 	Different maze-building algorithms
