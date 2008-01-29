@@ -26,6 +26,7 @@ class Maze:
     SOLID = 0
     EMPTY = 1
     SEEN = 2
+    GOAL = 3
     
     def __init__(self, seed, width, height):
         # use the seed given to us to make a pseudo-random number generator

@@ -70,41 +70,67 @@ class MazeGame:
     WIN_COLOR   = (0xff, 0xff, 0x00)
 
     def __init__(self, screen):
+        # note what time it was when we first launched
+        self.game_start_time = time.time()
+        
         xoOwner = presenceService.get_owner()
-        self.localplayer = Player(xoOwner)
-        # keep a list of active players, starting empty
-        self.players = {'xoOwner':self.localplayer}
+        # keep a list of all local players
+        self.localplayers = []
+
+        # start with just one player
+        player = Player(xoOwner)
+        self.localplayers.append(player)
+        # plus some bonus players (all hidden to start with)
+        self.localplayers.extend(player.bonusPlayers())
+
+        # keep a dictionary of all remote players, indexed by handle
+        self.remoteplayers = {}
+        # keep a list of all players, local and remote, 
+        self.allplayers = [] + self.localplayers
         
         self.screen = screen
         canvas_size = screen.get_size()
         self.aspectRatio = canvas_size[0] / float(canvas_size[1])
         
-        # start with a small maze
-        self.start_time = time.time()
-        self.maze = Maze(int(self.start_time), int(9*self.aspectRatio), 9)
+        # start with a small maze using a seed that will be different each time you play
+        self.maze = Maze(int(time.time()), int(9*self.aspectRatio), 9)
         self.reset()
         self.frame = 0
         
         self.font = pygame.font.Font(None, 30)
         
         # support arrow keys, game pad arrows and game pad buttons
-        self.upkeys = (pygame.K_UP, pygame.K_KP8, pygame.K_KP9)
-        self.downkeys = (pygame.K_DOWN, pygame.K_KP2, pygame.K_KP3)
-        self.leftkeys = (pygame.K_LEFT, pygame.K_KP4, pygame.K_KP7)
-        self.rightkeys = (pygame.K_RIGHT, pygame.K_KP6, pygame.K_KP1)
-        self.allkeys = self.upkeys + self.downkeys + self.leftkeys + self.rightkeys
+        # each set maps to a local player index and a direction
+        self.arrowkeys = {
+        # real key:     (localplayer index, ideal key)
+        pygame.K_UP:    (0, pygame.K_UP),
+        pygame.K_DOWN:  (0, pygame.K_DOWN),
+        pygame.K_LEFT:  (0, pygame.K_LEFT),
+        pygame.K_RIGHT: (0, pygame.K_RIGHT),
+        pygame.K_KP8:   (1, pygame.K_UP),
+        pygame.K_KP2:   (1, pygame.K_DOWN),
+        pygame.K_KP4:   (1, pygame.K_LEFT),
+        pygame.K_KP6:   (1, pygame.K_RIGHT),
+        pygame.K_KP9:   (2, pygame.K_UP),
+        pygame.K_KP3:   (2, pygame.K_DOWN),
+        pygame.K_KP7:   (2, pygame.K_LEFT),
+        pygame.K_KP1:   (2, pygame.K_RIGHT)
+        }
+
+    def game_running_time(self, newelapsed=None):
+        return int(time.time() - self.game_start_time)
 
     def reset(self):
         """Reset the game state.  Everyone starts in the top-left.
         The goal starts in the bottom-right corner."""
         self.running = True
-        self.start_time = time.time()
+        self.level_start_time = time.time()
         self.finish_time = None
-        for player in self.players.values():
+        for player in self.allplayers:
             player.reset()
-        self.goal = (self.maze.width-2, self.maze.height-2)
         self.dirtyRect = None
         self.dirtyPoints = []
+        self.maze.map[self.maze.width-2][self.maze.height-2] = self.maze.GOAL
         
         # clear and mark the whole screen as dirty
         self.screen.fill((0,0,0))
@@ -135,22 +161,22 @@ class MazeGame:
                 self.harder()
             elif event.key == pygame.K_MINUS:
                 self.easier()
-            elif event.key in self.upkeys:
-                self.localplayer.direction=(0,-1)
-                if len(self.players)>1:
-                    mesh.broadcast("move:%d,%d,%d,%d" % (self.localplayer.position[0], self.localplayer.position[1], self.localplayer.direction[0], self.localplayer.direction[1]))
-            elif event.key in self.downkeys:
-                self.localplayer.direction=(0,1)
-                if len(self.players)>1:
-                    mesh.broadcast("move:%d,%d,%d,%d" % (self.localplayer.position[0], self.localplayer.position[1], self.localplayer.direction[0], self.localplayer.direction[1]))
-            elif event.key in self.leftkeys:
-                self.localplayer.direction=(-1,0)
-                if len(self.players)>1:
-                    mesh.broadcast("move:%d,%d,%d,%d" % (self.localplayer.position[0], self.localplayer.position[1], self.localplayer.direction[0], self.localplayer.direction[1]))
-            elif event.key in self.rightkeys:
-                self.localplayer.direction=(1,0)
-                if len(self.players)>1:
-                    mesh.broadcast("move:%d,%d,%d,%d" % (self.localplayer.position[0], self.localplayer.position[1], self.localplayer.direction[0], self.localplayer.direction[1]))
+            elif self.arrowkeys.has_key(event.key):
+                playernum, direction = self.arrowkeys[event.key]
+                player = self.localplayers[playernum]
+                player.hidden = False
+                
+                if direction == pygame.K_UP:
+                    player.direction=(0,-1)
+                elif direction == pygame.K_DOWN:
+                    player.direction=(0,1)
+                elif direction == pygame.K_LEFT:
+                    player.direction=(-1,0)
+                elif direction == pygame.K_RIGHT:
+                    player.direction=(1,0)
+                
+                if len(self.remoteplayers)>0:
+                    mesh.broadcast("move:%s,%d,%d,%d,%d" % (player.nick, player.position[0], player.position[1], player.direction[0], player.direction[1]))
         elif event.type == pygame.KEYUP:
             pass
         elif event.type in (pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
@@ -161,65 +187,92 @@ class MazeGame:
             buddy = mesh.get_buddy(event.handle)
             if event.handle == mesh.my_handle():
                 print "Me:", buddy.props.nick, buddy.props.color
-                del self.players['xoOwner']
-                self.players[event.handle] = self.localplayer
             else:
                 print "Join:", buddy.props.nick, buddy.props.color
                 player = Player(buddy)
-                self.players[event.handle] = player
+                self.remoteplayers[event.handle] = player
+                self.allplayers.append(player)
+                self.allplayers.extend(player.bonusPlayers())
                 self.markPointDirty(player.position)
                 # send a test message to the new player
                 mesh.broadcast("Welcome %s" % player.nick)
                 # tell them which maze we are playing, so they can sync up
-                mesh.send_to(event.handle, "maze:%d,%d,%d" % (self.maze.seed, self.maze.width, self.maze.height))
+                mesh.send_to(event.handle, "maze:%d,%d,%d,%d" % (self.game_running_time(), self.maze.seed, self.maze.width, self.maze.height))
+                for player in self.localplayers:
+                    if not player.hidden:
+                        mesh.send_to(event.handle, "move:%s,%d,%d,%d,%d" % (player.nick, player.position[0], player.position[1], player.direction[0], player.direction[1]))
         elif event.type == mesh.PARTICIPANT_REMOVE:
-            if self.players.has_key(event.handle):
-                player = self.players[event.handle]
+            if self.remoteplayers.has_key(event.handle):
+                player = self.remoteplayers[event.handle]
                 print "Leave:", player.nick
                 self.markPointDirty(player.position)
-                del self.players[event.handle]
+                self.allplayers.remove(player)
+                for bonusplayer in player.bonusPlayers():
+                    self.markPointDirty(bonusplayer.position)
+                    self.allplayers.remove(bonusplayer)
+                del self.remoteplayers[event.handle]
         elif event.type == mesh.MESSAGE_UNI or event.type == mesh.MESSAGE_MULTI:
             buddy = mesh.get_buddy(event.handle)
             #print "Message from %s / %s: %s" % (buddy.props.nick, event.handle, event.content)
-            if self.players.has_key(event.handle):
-                player = self.players[event.handle]
-                self.handleMessage(player, event.content)
+            if event.handle == mesh.my_handle():
+                # ignore messages from ourself
+                pass
+            elif self.remoteplayers.has_key(event.handle):
+                player = self.remoteplayers[event.handle]
+                try:
+                    self.handleMessage(player, event.content)
+                except:
+                    print "Error handling message: %s\n%s" % (event, sys.exc_info())
             else:
                 print "Message from unknown buddy?"
         else:
             print "Unknown event:", event
 
     def handleMessage(self, player, message):
-        """Handle a message from a player on the mesh.  The messages are:
-            maze:seed,width,height
+        """Handle a message from a player on the mesh.
+            We try to be forward compatible with new versions of Maze by allowing messages to
+            have extra stuff at the end and ignoring unrecognized messages.
+            We allow some messages to contain a different nick than the message's source player
+            to support bonus players on that player's XO.
+            The valid messages are:
+            maze:running_time,seed,width,height
                 A player has a differen maze.
-                The one with the lowest seed # will force all other players to use that maze.
-            position:x,y
-                A player has moved to x,y
+                The one that has been running the longest will force all other players to use that maze.
+                This way new players will join the existing game properly.
+            move:nick,x,y,dx,dy
+                A player's at x,y is now moving in direction dx,dy
+            finish:nick,elapsed
+                A player has finished the maze
         """
         # ignore messages from myself
-        if player == self.localplayer:
+        if player in self.localplayers:
             return
         if message.startswith("move:"):
             # a player has moved
-            x,y,dx,dy = message[5:].split(",")
+            nick,x,y,dx,dy = message[5:].split(",")[:5]
+            player = player.bonusPlayer(nick)
+            player.hidden = False
             self.markPointDirty(player.position)
             player.position = (int(x),int(y))
             player.direction = (int(dx),int(dy))
             self.markPointDirty(player.position)
         elif message.startswith("maze:"):
             # someone has a different maze than us
-            seed,width,height = map(lambda x: int(x), message[5:].split(","))
-            # is that a different maze than the one we're already playing?
-            if self.maze.seed>seed: # or self.maze.width!=width or self.maze.height!=height:
-                # use the smaller seed, so the players who are already playing
-                # won't have their maps yanked out from under them when someone new joins.
+            running_time,seed,width,height = map(lambda x: int(x), message[5:].split(",")[:4])
+            # is that maze older than the one we're already playing?
+            # note that we use elapsed time instead of absolute time because
+            # people's clocks are often set to something totally wrong
+            if self.game_running_time() < running_time:
+                # make note of the earlier time that the game really started (before we joined)
+                self.game_start_time = time.time() - running_time
+                # use the new seed
                 self.maze = Maze(seed, width, height)
                 self.reset()
         elif message.startswith("finish:"):
             # someone finished the maze
-            elapsed = float(message[7:])
-            player.elapsed = elapsed
+            nick, elapsed = message[7:].split(",")[:2]
+            player = player.bonusPlayer(nick)
+            player.elapsed = float(elapsed)
             self.markPointDirty(player.position)
         else:
             # it was something I don't recognize...
@@ -261,12 +314,13 @@ class MazeGame:
         newWidth = int(newHeight * self.aspectRatio)
         if newWidth % 2 == 0:
             newWidth -= 1
-        # use a smaller seed, so that other players will use this maze also
-        self.maze = Maze(self.maze.seed-1, newWidth, newHeight)
+        self.maze = Maze(self.maze.seed+1, newWidth, newHeight)
         self.reset()
         # tell everyone which maze we are playing, so they can sync up
-        if len(self.players)>1:
-            mesh.broadcast("maze:%d,%d,%d" % (self.maze.seed, self.maze.width, self.maze.height))
+        if len(self.remoteplayers)>0:
+            # but fudge it a little so that we can be sure they'll use our maze
+            self.game_start_time -= 10
+            mesh.broadcast("maze:%d,%d,%d,%d" % (self.game_running_time(), self.maze.seed, self.maze.width, self.maze.height))
         
     def easier(self):
         """Make a new maze that is easier than the current one."""
@@ -275,38 +329,37 @@ class MazeGame:
         newWidth = int(newHeight * self.aspectRatio)
         if newWidth % 2 == 0:
             newWidth -= 1
-        # use a smaller seed, so that other players will use this maze also
-        self.maze = Maze(self.maze.seed-1, newWidth, newHeight)
+        self.maze = Maze(self.maze.seed+1, newWidth, newHeight)
         self.reset()
         # tell everyone which maze we are playing, so they can sync up
-        if len(self.players)>1:
-            mesh.broadcast("maze:%d,%d,%d" % (self.maze.seed, self.maze.width, self.maze.height))
+        if len(self.remoteplayers)>0:
+            # but fudge it a little so that we can be sure they'll use our maze
+            self.game_start_time -= 10
+            mesh.broadcast("maze:%d,%d,%d,%d" % (self.game_running_time(), self.maze.seed, self.maze.width, self.maze.height))
 
     def animate(self):
         """Animate one frame of action."""
         
-        for player in self.players.values():
+        for player in self.allplayers:
             oldposition = player.position
-            if oldposition == self.goal:
-                break
             newposition = player.animate(self.maze)
             if oldposition != newposition:
                 self.markPointDirty(oldposition)
                 self.markPointDirty(newposition)
-                if player == self.localplayer:
+                if player in self.localplayers:
                     self.maze.map[player.previous[0]][player.previous[1]] = self.maze.SEEN
-                    if newposition == self.goal:
-                        self.finish()
+                    if self.maze.map[newposition[0]][newposition[1]] == self.maze.GOAL:
+                        self.finish(player)
                         
-        finish_delay = min(2 * len(self.players), 6)
+        finish_delay = min(2 * len(self.allplayers), 6)
         if self.finish_time is not None and time.time() > self.finish_time+finish_delay:
             self.harder()
     
-    def finish(self):
+    def finish(self, player):
         self.finish_time = time.time()
-        self.localplayer.elapsed = self.finish_time - self.start_time
-        if len(self.players)>1:
-            mesh.broadcast("finish:%.2f" % (self.localplayer.elapsed))
+        player.elapsed = self.finish_time - self.level_start_time
+        if len(self.remoteplayers)>0:
+            mesh.broadcast("finish:%s,%.2f" % (player.nick, player.elapsed))
     
     def draw(self):
         """Draw the current state of the game.
@@ -317,20 +370,25 @@ class MazeGame:
         # compute the size of the tiles given the screen size, etc.
         size = self.screen.get_size()
         self.tileSize = min(size[0] / self.maze.width, size[1] / self.maze.height)
-        self.offsetX = (size[0] - self.tileSize * self.maze.width)/2
-        self.offsetY = (size[1] - self.tileSize * self.maze.height)/2
+        self.bounds = pygame.Rect((size[0] - self.tileSize * self.maze.width)/2,
+                                  (size[1] - self.tileSize * self.maze.height)/2,
+                                  self.tileSize * self.maze.width,
+                                  self.tileSize * self.maze.height)
         self.outline = int(self.tileSize/5)
 
         def drawPoint(x,y):
-            rect = pygame.Rect(self.offsetX + x*self.tileSize, self.offsetY + y*self.tileSize, self.tileSize, self.tileSize)
-            if self.maze.map[x][y] == self.maze.EMPTY:
+            rect = pygame.Rect(self.bounds.x + x*self.tileSize, self.bounds.y + y*self.tileSize, self.tileSize, self.tileSize)
+            tile = self.maze.map[x][y]
+            if tile == self.maze.EMPTY:
                 pygame.draw.rect(self.screen, self.EMPTY_COLOR, rect, 0)
-            elif self.maze.map[x][y] == self.maze.SOLID:
+            elif tile == self.maze.SOLID:
                 pygame.draw.rect(self.screen, self.SOLID_COLOR, rect, 0)
-            elif self.maze.map[x][y] == self.maze.SEEN:
+            elif tile == self.maze.SEEN:
                 pygame.draw.rect(self.screen, self.EMPTY_COLOR, rect, 0)
                 dot = rect.inflate(-self.outline*2, -self.outline*2)
                 pygame.draw.ellipse(self.screen, self.TRAIL_COLOR, dot, 0)
+            elif tile == self.maze.GOAL:
+                pygame.draw.rect(self.screen, self.GOAL_COLOR, rect, 0)
             else:
                 pygame.draw.rect(self.screen, (0xff, 0x00, 0xff), rect, 0)
         
@@ -351,21 +409,13 @@ class MazeGame:
         for x,y in self.dirtyPoints:
             drawPoint(x,y)
         
-        # draw the goal
-        rect = self.offsetX+self.goal[0]*self.tileSize, self.offsetY+self.goal[1]*self.tileSize, self.tileSize, self.tileSize
-        pygame.draw.rect(self.screen, self.GOAL_COLOR, rect, 0)
-
-        # draw all remote players
-        remotePlayers = list(self.players.values())
-        remotePlayers.remove(self.localplayer)
-        for player in remotePlayers:
-            self.drawPlayer(player)
-
-        # draw the local player last so he/she will show up on top
-        self.drawPlayer(self.localplayer)
+        # draw all players
+        for player in self.allplayers:
+            if not player.hidden:
+                player.draw(self.screen, self.bounds, self.tileSize)
 
         # draw the elapsed time for each player that has finished
-        finishedPlayers = filter(lambda p: p.elapsed is not None, self.players.values())
+        finishedPlayers = filter(lambda p: p.elapsed is not None, self.allplayers)
         finishedPlayers.sort(lambda a,b: cmp(a.elapsed,b.elapsed))
         y = 0
         for player in finishedPlayers:
@@ -384,16 +434,6 @@ class MazeGame:
         # clear the dirty rect so nothing will be drawn until there is a change
         self.dirtyRect = None
         self.dirtyPoints = []
-
-    def drawPlayer(self, player):
-        fg, bg = player.colors
-        posX, posY = player.position
-        rect = pygame.Rect(self.offsetX+posX*self.tileSize,
-                           self.offsetY+posY*self.tileSize,
-                           self.tileSize, self.tileSize)
-        pygame.draw.ellipse(self.screen, fg, rect, 0)
-        dot = rect.inflate(-self.outline, -self.outline)
-        pygame.draw.ellipse(self.screen, bg, dot, 0)
 
 def main():
     """Run a game of Maze."""

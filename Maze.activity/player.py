@@ -19,17 +19,45 @@
 #     You should have received a copy of the GNU General Public License
 #     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 
+from olpcgames.util import get_bundle_path
+bundlepath = get_bundle_path()
 from sugar.graphics.icon import Icon
 from sugar.graphics.xocolor import XoColor
+import pygame
+import re, os
 
 class Player:
-    def __init__(self, buddy):
+    def __init__(self, buddy, shape='circle'):
+        self.buddy = buddy
         self.nick = buddy.props.nick
         colors = buddy.props.color.split(",")
         def string2Color(str):
             return (int(str[1:3],16), int(str[3:5],16), int(str[5:7],16))
         self.colors = map(string2Color, colors)
+        self.shape = shape
+        self.hidden = False
+        self.bonusplayers = None
         self.reset()
+
+    def draw(self, screen, bounds, size):
+        rect = pygame.Rect(bounds.x+self.position[0]*size, bounds.y+self.position[1]*size, size, size)
+        border = size / 10.
+        center = rect.inflate(-border*2, -border*2)
+        fg, bg = self.colors
+        if self.shape == 'circle':
+            pygame.draw.ellipse(screen, fg, rect, 0)
+            pygame.draw.ellipse(screen, bg, center, 0)
+        elif self.shape == 'square':
+            pygame.draw.rect(screen, fg, rect, 0)
+            pygame.draw.rect(screen, bg, center, 0)
+        elif self.shape == 'triangle':
+            rect = rect.inflate(-1,-1)
+            pts = [rect.bottomleft, rect.midtop, rect.bottomright]
+            pygame.draw.polygon(screen, fg, pts, 0)
+            pts = [(pts[0][0]+border*1.394, pts[0][1]-border),
+                   (pts[1][0],              pts[1][1]+border*2.236),
+                   (pts[2][0]-border*1.394, pts[2][1]-border)]
+            pygame.draw.polygon(screen, bg, pts, 0)
 
     def reset(self):
         self.direction = (0,0)
@@ -39,7 +67,7 @@ class Player:
     
     def animate(self, maze):
         # if the player finished the maze, then don't move
-        if self.elapsed is not None:
+        if maze.map[self.position[0]][self.position[1]] == maze.GOAL:
             self.direction=(0,0)
         if self.direction == (0,0):
             return self.position
@@ -80,4 +108,25 @@ class Player:
        	    self.direction = directions[0]
         else:
             self.direction = (0,0)
+
+    def bonusPlayers(self):
+        if self.bonusplayers is None:
+            self.bonusplayers = []
+            self.bonusplayers.append(Player(self.buddy,'square'))
+            self.bonusplayers.append(Player(self.buddy,'triangle'))
+
+            count = 2
+            for player in self.bonusplayers:
+                player.nick = self.nick + "-%d" % count
+                player.hidden = True
+                count += 1
+
+        return self.bonusplayers
+
+    def bonusPlayer(self, nick):
+        if nick == self.nick:
+            return self
+        for bonusplayer in self.bonusPlayers():
+            if bonusplayer.nick == nick:
+                return bonusplayer
 
