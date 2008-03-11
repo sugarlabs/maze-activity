@@ -93,3 +93,8 @@ def iconFromBuddy(self, buddy):
     # srf = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
     # file.render_cairo(cairo.Context(srf))
     # return surface.CairoSurface(srf)        
+
+
+
+
+

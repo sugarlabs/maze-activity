@@ -3,5 +3,5 @@ name = Maze
 service_name = vu.lux.olpc.Maze
 class = activity.MazeActivity
 icon = activity-maze
-activity_version = 5
+activity_version = 6
 show_launcher = yes
