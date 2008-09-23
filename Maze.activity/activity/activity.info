@@ -5,5 +5,5 @@ class = activity.MazeActivity
 icon = activity-maze
 activity_version = 6
 show_launcher = yes
-license = GPLv3+
 host_version = 1
+license = GPLv3+
