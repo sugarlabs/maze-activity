@@ -226,13 +226,6 @@ class MazeGame:
                     print "Error handling message: %s\n%s" % (event, sys.exc_info())
             else:
                 print "Message from unknown buddy?"
-        elif event.type == pygame.USEREVENT:
-            if event.action == 'harder':
-                self.harder()
-            elif event.action == 'easier':
-                self.easier()
-            else:
-                print "Unknown user event action:", event.action
         else:
             print "Unknown event:", event
 

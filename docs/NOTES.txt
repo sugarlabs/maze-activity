@@ -40,6 +40,40 @@ Enhancements:
 	Add multiple floors with ramps, ladders, pits, etc.
 	Add a light source at each player that reveals the map as you travel through it.
 	Add a fog that slowly fades areas you have seen already.
+
+
+Amazing Mazes:
+	Implement some algorithms from here:
+	http://www.astrolog.org/labyrnth/algrithm.htm
+
+	Currently (Maze v5) we use the Recursive backtracker algorithm.
+	It would be nice to switch to "Growing tree algorithm" which would allow
+	a simple adjustment to affect the river of the maze.  It could also have
+	a directional bias adjustment that controls the probability of digging
+	horizontally versus vertically.
+	
+		After implementing this, it seems that there are two adjustments that
+		make a difference to the maze.  One is the probability of continuing the
+		current path versus going back to the stack of old cells.  The other is
+		the probability of picking a new versus old cell.  If you always pick very
+		old cells the maze is very odd looking and boring.  If you always continue
+		the current path or pick a recent cell then the maze is just like before.
+		If you sometimes pick a cell mostly at random, then the maze has many short
+		paths, but the solution is relatively direct and easy to find.  I was not
+		able to find a combination of settings that makes the maze much more difficult
+		than before.  Perhaps picking a mostly new path, but not always the current
+		path is slightly more difficult.
+		
+		If I had to pick just one knob, then I would pick the % chance of continuing the
+		current path, with a fixed uniform probability of picking any path on the stack.
+		This gives a variety in the maze texture without ever getting a bizarre looking
+		maze.
+
+	For some complex mazes, would need to switch to an image-based map or an
+	adjacency-graph-based map.
+	Could use the mouse to move (move in small steps towards mouse - no clicking)
+	
+	Ideally you could just import any image and use it as a maze.
 	
 
 
