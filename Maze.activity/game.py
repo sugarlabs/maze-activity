@@ -306,7 +306,7 @@ class MazeGame:
             pygame.display.flip()
             # don't animate faster than about 20 frames per second
             # this keeps the speed reasonable and limits cpu usage
-            clock.tick(20)
+            clock.tick(25)
 
     def harder(self):
         """Make a new maze that is harder than the current one."""
