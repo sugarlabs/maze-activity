@@ -303,7 +303,7 @@ class MazeGame:
             self.animate()
             self.draw()
             
-            pygame.display.flip()
+            pygame.display.update()
             # don't animate faster than about 20 frames per second
             # this keeps the speed reasonable and limits cpu usage
             clock.tick(25)
