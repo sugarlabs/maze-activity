@@ -47,6 +47,7 @@ presenceService = presenceservice.get_instance()
 from maze import Maze
 from player import Player
 
+
 class MazeGame:
     """Maze game controller.
     This class handles all of the game logic, event loop, mulitplayer, etc."""
