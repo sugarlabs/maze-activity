@@ -296,6 +296,8 @@ class MazeGame:
         clock = pygame.time.Clock()
         
         while self.running:
+            a,b,c,d=pygame.cursors.load_xbm('my_cursor.xbm','my_cursor_mask.xbm')
+            pygame.mouse.set_cursor(a,b,c,d) 
             self.frame += 1
             # process all queued events
             for event in pausescreen.get_events(sleep_timeout=30):
