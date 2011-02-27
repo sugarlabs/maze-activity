@@ -47,6 +47,7 @@ presenceService = presenceservice.get_instance()
 from maze import Maze
 from player import Player
 
+
 class MazeGame:
     """Maze game controller.
     This class handles all of the game logic, event loop, mulitplayer, etc."""
@@ -295,6 +296,8 @@ class MazeGame:
         clock = pygame.time.Clock()
         
         while self.running:
+            a,b,c,d=pygame.cursors.load_xbm('my_cursor.xbm','my_cursor_mask.xbm')
+            pygame.mouse.set_cursor(a,b,c,d) 
             self.frame += 1
             # process all queued events
             for event in pausescreen.get_events(sleep_timeout=30):
@@ -303,10 +306,10 @@ class MazeGame:
             self.animate()
             self.draw()
             
-            pygame.display.flip()
+            pygame.display.update()
             # don't animate faster than about 20 frames per second
             # this keeps the speed reasonable and limits cpu usage
-            clock.tick(20)
+            clock.tick(25)
 
     def harder(self):
         """Make a new maze that is harder than the current one."""
