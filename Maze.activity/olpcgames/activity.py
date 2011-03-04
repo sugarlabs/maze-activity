@@ -93,10 +93,29 @@ class PyGameActivity(activity.Activity):
         This is a customisation point for those games which want to
         provide custom toolbars when running under Sugar.
         """
-        toolbar = activity.ActivityToolbar(self)
-        toolbar.show()
-        self.set_toolbox(toolbar)
-        def shared_cb(*args, **kwargs):
+	OLD_TOOLBAR = False
+	try:
+		from sugar.graphics.toolbarbox import ToolbarBox, ToolbarButton
+		from sugar.activity.widgets import ActivityToolbarButton
+        except ImportError:
+		OLD_TOOLBAR = True
+        
+	if OLD_TOOLBAR:
+        #	toolbar = activity.ActivityToolbar(self)
+        #	toolbar.show()
+        #	self.set_toolbox(toolbar)
+		self.toolbox = ActivityToolbox(self)
+	        self.set_toolbox(self.toolbox)
+	        self.toolbox.show()
+                self.set_toolbox(self.toolbox)
+        else:
+		toolbar_box = ToolbarBox()
+                self.activity_button = ActivityToolbarButton(self)
+		toolbar_box.toolbar.insert(self.activity_button, 0)
+		self.set_toolbar_box(toolbar_box)
+     
+
+    def shared_cb(*args, **kwargs):
             log.info( 'shared: %s, %s', args, kwargs )
             try:
                 mesh.activity_shared(self)
