@@ -1,7 +1,10 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 """Embeds the Canvas widget into a Sugar-specific Activity environment"""
+
 import logging
-logging.root.setLevel( logging.WARN )
-log = logging.getLogger( 'olpcgames.activity' )
+logging.root.setLevel(logging.WARN)
+log = logging.getLogger('olpcgames.activity')
 #log.setLevel( logging.INFO )
 
 import pygtk
@@ -16,7 +19,9 @@ from olpcgames import mesh, util
 
 __all__ = ['PyGameActivity']
 
+
 class PyGameActivity(activity.Activity):
+
     """PyGame-specific activity type, provides boilerplate toolbar, creates canvas
 
     Subclass Overrides:
@@ -25,7 +30,8 @@ class PyGameActivity(activity.Activity):
             format like so:
                 'package.module:main'
             if not function name is provided, "main" is assumed.
-        game_handler -- alternate specification via direct reference to a main-loop
+        game_handler -- alternate specification via direct 
+	reference to a main-loop
             function
 
         game_size -- two-value tuple specifying the size of the display in pixels,
@@ -54,105 +60,138 @@ class PyGameActivity(activity.Activity):
     this super-class, with no easy way of overriding without completely rewriting
     the __init__ method.  We should allow for customising both the UI layout and
     the toolbar contents/layout/connection.
-    
+
     XXX Note that if you change the title of your activity in the toolbar you may 
     see the same focus issues as we have patched around in the build_toolbar 
     method.  If so, please report them to Mike Fletcher.
+
     """
+
     game_name = None
     game_title = 'PyGame Game'
     game_handler = None
-    game_size = (16 * style.GRID_CELL_SIZE,
-                 11 * style.GRID_CELL_SIZE)
+    game_size = (16 * style.GRID_CELL_SIZE, 11 * style.GRID_CELL_SIZE)
     pygame_mode = 'SDL'
 
     def __init__(self, handle):
         """Initialise the Activity with the activity-description handle"""
+
         super(PyGameActivity, self).__init__(handle)
         self.make_global()
         if self.game_size is None:
-            width,height = gtk.gdk.screen_width(), gtk.gdk.screen_height()
-            log.info( 'Total screen size: %s %s', width,height)
+            (width, height) = (gtk.gdk.screen_width(),
+                               gtk.gdk.screen_height())
+            log.info('Total screen size: %s %s', width, height)
+
             # for now just fudge the toolbar size...
-            self.game_size = width, height - (1*style.GRID_CELL_SIZE)
+
+            self.game_size = (width, height - 1 * style.GRID_CELL_SIZE)
         self.set_title(self.game_title)
         toolbar = self.build_toolbar()
-        log.debug( 'Toolbar size: %s', toolbar.get_size_request())
+        log.debug('Toolbar size: %s', toolbar.get_size_request())
         canvas = self.build_canvas()
 
-    def make_global( self ):
+    def make_global(self):
         """Hack to make olpcgames.ACTIVITY point to us
         """
-        import weakref, olpcgames
-        assert not olpcgames.ACTIVITY, """Activity.make_global called twice, have you created two Activity instances in a single process?"""
-        olpcgames.ACTIVITY = weakref.proxy( self )
 
-    def build_toolbar( self ):
+        import weakref
+        import olpcgames
+        assert not olpcgames.ACTIVITY, \
+            """Activity.make_global called twice, have you created two Activity instances in a single process?"""
+        olpcgames.ACTIVITY = weakref.proxy(self)
+
+    def build_toolbar(self):
         """Build our Activity toolbar for the Sugar system
 
         This is a customisation point for those games which want to
         provide custom toolbars when running under Sugar.
         """
-	OLD_TOOLBAR = False
-	try:
-		from sugar.graphics.toolbarbox import ToolbarBox, ToolbarButton
-		from sugar.activity.widgets import ActivityToolbarButton
-        except ImportError:
-		OLD_TOOLBAR = True
-        
-	if OLD_TOOLBAR:
-        #	toolbar = activity.ActivityToolbar(self)
-        #	toolbar.show()
-        #	self.set_toolbox(toolbar)
-		self.toolbox = ActivityToolbox(self)
-	        self.set_toolbox(self.toolbox)
-	        self.toolbox.show()
-                self.set_toolbox(self.toolbox)
-        else:
-		toolbar_box = ToolbarBox()
-                self.activity_button = ActivityToolbarButton(self)
-		toolbar_box.toolbar.insert(self.activity_button, 0)
-		self.set_toolbar_box(toolbar_box)
-     
 
-    def shared_cb(*args, **kwargs):
-            log.info( 'shared: %s, %s', args, kwargs )
+        try:
+            from sugar.graphics.toolbarbox import ToolbarBox, ToolbarButton
+            from sugar.activity.widgets import ActivityToolbarButton, StopButton, \
+                                                ShareButton, KeepButton
+            from mybutton import MyActivityToolbarButton
+
+            toolbar_box = ToolbarBox()
+            activity_button = MyActivityToolbarButton(self)
+            toolbar_box.toolbar.insert(activity_button, 0)
+            activity_button.show()
+
+            separator = gtk.SeparatorToolItem()
+            separator.props.draw = False
+            separator.set_expand(True)
+            toolbar_box.toolbar.insert(separator, -1)
+            separator.show()
+
+            share_button = ShareButton(self)
+            toolbar_box.toolbar.insert(share_button, -1)
+            share_button.show()
+
+            keep_button = KeepButton(self)
+            toolbar_box.toolbar.insert(keep_button, -1)
+            keep_button.show()
+
+            stop_button = StopButton(self)
+            stop_button.props.accelerator = '<Ctrl><Shift>Q'
+            toolbar_box.toolbar.insert(stop_button, -1)
+            stop_button.show()
+
+            self.set_toolbar_box(toolbar_box)
+            toolbar_box.show()
+            toolbar=toolbar_box.toolbar
+        except ImportError:
+            toolbar = activity.ActivityToolbar(self)
+            toolbar.show()
+            self.set_toolbox(toolbar)
+            toolbar.title.unset_flags(gtk.CAN_FOCUS)
+        
+        def shared_cb(*args, **kwargs):
+            log.info('shared: %s, %s', args, kwargs)
             try:
                 mesh.activity_shared(self)
             except Exception, err:
-                log.error( """Failure signaling activity sharing to mesh module: %s""", util.get_traceback(err) )
+                log.error("""Failure signaling activity sharing to mesh module: %s"""
+                          , util.get_traceback(err))
             else:
-                log.info( 'mesh activity shared message sent, trying to grab focus' )
+                log.info('mesh activity shared message sent, trying to grab focus'
+                         )
             try:
                 self._pgc.grab_focus()
             except Exception, err:
-                log.warn( 'Focus failed: %s', err )
+                log.warn('Focus failed: %s', err)
             else:
-                log.info( 'asserting focus' )
-                assert self._pgc.is_focus(), """Did not successfully set pygame canvas focus"""
-            log.info( 'callback finished' )
-            
+                log.info('asserting focus')
+                assert self._pgc.is_focus(), \
+                    """Did not successfully set pygame canvas focus"""
+            log.info('callback finished')
+
         def joined_cb(*args, **kwargs):
-            log.info( 'joined: %s, %s', args, kwargs )
+            log.info('joined: %s, %s', args, kwargs)
             mesh.activity_joined(self)
             self._pgc.grab_focus()
-        self.connect("shared", shared_cb)
-        self.connect("joined", joined_cb)
+
+        self.connect('shared', shared_cb)
+        self.connect('joined', joined_cb)
 
         if self.get_shared():
+
             # if set at this point, it means we've already joined (i.e.,
             # launched from Neighborhood)
+
             joined_cb()
 
-        toolbar.title.unset_flags(gtk.CAN_FOCUS)
         return toolbar
 
     PYGAME_CANVAS_CLASS = PyGameCanvas
-    def build_canvas( self ):
+
+    def build_canvas(self):
         """Construct the PyGame or PyGameCairo canvas for drawing"""
-        assert self.game_handler or self.game_name, 'You must specify a game_handler or game_name on your Activity (%r)'%(
-            self.game_handler or self.game_name
-        )
+
+        assert self.game_handler or self.game_name, \
+            'You must specify a game_handler or game_name on your Activity (%r)' \
+            % (self.game_handler or self.game_name)
         if self.pygame_mode != 'Cairo':
             self._pgc = self.PYGAME_CANVAS_CLASS(*self.game_size)
             self.set_canvas(self._pgc)
@@ -175,7 +214,8 @@ class PyGameActivity(activity.Activity):
             app = self.game_handler or self.game_name
             if ':' not in app:
                 app += ':main'
-            mod_name, fn_name = app.split(':')
+            (mod_name, fn_name) = app.split(':')
             mod = __import__(mod_name, globals(), locals(), [])
             fn = getattr(mod, fn_name)
             fn()
+
