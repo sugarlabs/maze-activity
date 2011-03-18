@@ -11,7 +11,6 @@ olpcgames/eventwrap.py
 olpcgames/gtkEvent.py
 olpcgames/mesh.py
 olpcgames/pangofont.py
-olpcgames/tubeconn.py
 olpcgames/util.py
 olpcgames/video.py
 setup.py
