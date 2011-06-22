@@ -1,9 +1,15 @@
 [Activity]
 name = Maze
-bundle_id = vu.lux.olpc.Maze
-exec = activity.MazeActivity
+
+exec = sugar-activity activity.MazeActivity
 icon = activity-maze
-activity_version = 11
+version   = %(activity_version)s
 show_launcher = yes
 host_version = 1
 license = GPLv3+
+
+#deprecated options for sweets
+
+bundle_id = vu.lux.olpc.Maze
+activity_version = 11
+
