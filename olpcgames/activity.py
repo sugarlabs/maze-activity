@@ -217,4 +217,3 @@ class PyGameActivity(activity.Activity):
             mod = __import__(mod_name, globals(), locals(), [])
             fn = getattr(mod, fn_name)
             fn()
-
