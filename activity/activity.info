@@ -8,8 +8,5 @@ show_launcher = yes
 host_version = 1
 license = GPLv3+
 
-#deprecated options for sweets
-
+#deprecated for sweets use
 bundle_id = vu.lux.olpc.Maze
-activity_version = 11
-

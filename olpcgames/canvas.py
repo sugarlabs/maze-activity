@@ -87,7 +87,7 @@ class PyGameCanvas(gtk.Layout):
         # Load the modules
         # NOTE: This is delayed because pygame.init() must come after the embedding is up
         if ':' not in app:
-            app += ':main'
+                app += ':main'
         mod_name, fn_name = app.split(':')
         mod = __import__(mod_name, globals(), locals(), [])
         fn = getattr(mod, fn_name)
@@ -101,7 +101,8 @@ class PyGameCanvas(gtk.Layout):
         import olpcgames
         olpcgames.widget = olpcgames.WIDGET = self
         try:
-            import sugar.activity.activity,os
+            import sugar.activity.activity
+            import os
         except ImportError, err:
             log.info( """Running outside Sugar""" )
         else:
