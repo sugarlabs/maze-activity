@@ -57,7 +57,7 @@ class PyGameCanvas(gtk.Layout):
         
         self._align.show()
         
-        self.put(self._align, 0,0)
+        self.put(self._align, 0, 0)
         
         # Construct a gtkEvent.Translator
         self._translator = gtkEvent.Translator(self, self._inner_evb)
@@ -91,7 +91,6 @@ class PyGameCanvas(gtk.Layout):
         mod_name, fn_name = app.split(':')
         mod = __import__(mod_name, globals(), locals(), [])
         fn = getattr(mod, fn_name)
-        
         # Start Pygame
         self.__thread = threading.Thread(target=self._start, args=[fn])
         self.__thread.start()

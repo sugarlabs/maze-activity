@@ -3,10 +3,9 @@ name = Maze
 
 exec = sugar-activity activity.MazeActivity
 icon = activity-maze
-version   = %(activity_version)s
+activity_version   = 12
 show_launcher = yes
 host_version = 1
 license = GPLv3+
 
-#deprecated for sweets use
 bundle_id = vu.lux.olpc.Maze
