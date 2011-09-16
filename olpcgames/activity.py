@@ -111,7 +111,7 @@ class PyGameActivity(activity.Activity):
         try:
             from sugar.graphics.toolbarbox import ToolbarBox, ToolbarButton
             from sugar.activity.widgets import ActivityToolbarButton, StopButton, \
-                                                ShareButton, KeepButton
+                                                ShareButton
             from mybutton import MyActivityToolbarButton
 
             toolbar_box = ToolbarBox()
@@ -128,10 +128,6 @@ class PyGameActivity(activity.Activity):
             share_button = ShareButton(self)
             toolbar_box.toolbar.insert(share_button, -1)
             share_button.show()
-
-            keep_button = KeepButton(self)
-            toolbar_box.toolbar.insert(keep_button, -1)
-            keep_button.show()
 
             stop_button = StopButton(self)
             toolbar_box.toolbar.insert(stop_button, -1)
