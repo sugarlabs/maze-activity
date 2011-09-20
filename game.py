@@ -447,8 +447,11 @@ def main():
     # ask pygame how big the screen is, leaving a little room for the toolbar
     toolbarheight = 75
     pygame.display.init()
-    maxX,maxY = pygame.display.list_modes()[0]
-    screen = pygame.display.set_mode( ( maxX, maxY-toolbarheight ) )
+#    maxX,maxY = pygame.display.list_modes()[0]
+    videoinfo = pygame.display.Info()
+    width = videoinfo.current_w
+    height = videoinfo.current_h - toolbarheight
+    screen = pygame.display.set_mode((width, height))
 
     game = MazeGame(screen)
     game.run()

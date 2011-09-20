@@ -1,3 +1,8 @@
+13
+
+*fix for olpc #11231 (wrong dimensions in pygame activities) by james cameron
+
+
 12
 
 *New icon, patch to make the activity start again (Manu Quiñones)
