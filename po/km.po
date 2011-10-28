@@ -18,4 +18,4 @@ msgstr ""
 
 #: activity/activity.info:2
 msgid "Maze"
-msgstr ""
+msgstr "ខ្វាត់ខ្វែង"
