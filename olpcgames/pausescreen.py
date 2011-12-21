@@ -9,7 +9,7 @@ olpcgames data directory over a dimmed version of the current
 screen contents.
 """
 import logging
-log = logging.getLogger( 'olpcgames.pausescreen' )
+log = logging.getLogger('olpcgames.pausescreen')
 import pygame
 from pygame import sprite
 
@@ -30,25 +30,25 @@ def get_events( sleep_timeout = 10, pause=None, **args ):
         pause = pauseScreen
     events = pygame.event.get( )
     if not events:
-        log.info( 'No events in queue' )
+        log.info('No events in queue')
         old_screen = None
         if hasattr(pygame.event, 'last_event_time') and pygame.event.last_event_time() > sleep_timeout:
             # we've been waiting long enough, go to sleep visually
-            log.warn( 'Pausing activity after %s with function %s', sleep_timeout, pause )
+            log.warn('Pausing activity after %s with function %s', sleep_timeout, pause)
             old_screen = pause( )
             if old_screen:
                 pygame.display.flip()
             # now we wait until there *are* some events (efficiently)
             # and retrieve any extra events that are waiting...
             events = [ pygame.event.wait() ] + pygame.event.get()
-            log.warn( 'Activity restarted')
+            log.warn('Activity restarted')
             if old_screen:
-                restoreScreen( old_screen )
+                restoreScreen(old_screen)
         else:
-            log.info( 'Not running under OLPCGames' )
+            log.info('Not running under OLPCGames')
     return events
 
-def pauseScreen( overlaySVG=None ):
+def pauseScreen(overlaySVG=None):
     """Display a "Paused" screen and suspend
     
     This default implementation will not do anything to shut down your 
@@ -69,7 +69,7 @@ def pauseScreen( overlaySVG=None ):
     )
     pause_sprite.rect.center = screen.get_rect().center
     group = sprite.RenderUpdates( )
-    group.add( pause_sprite )
+    group.add(pause_sprite)
 
     # dim the screen and display the 'paused' message in the center.
     BLACK = (0,0,0)
@@ -79,10 +79,10 @@ def pauseScreen( overlaySVG=None ):
     screen.fill(BLACK)
     screen.blit(dimmed, (0,0))
     
-    group.draw( screen )
+    group.draw(screen)
     return old_screen
 
-def restoreScreen( old_screen ):
+def restoreScreen(old_screen):
     """Restore the original screen and return"""
     screen = pygame.display.get_surface()
     screen.blit(old_screen, (0,0))
