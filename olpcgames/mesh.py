@@ -1,6 +1,6 @@
 '''mesh.py: utilities for wrapping the mesh and making it accessible to Pygame'''
 import logging
-log = logging.getLogger( 'olpcgames.mesh' )
+log = logging.getLogger('olpcgames.mesh')
 #log.setLevel( logging.DEBUG )
 try:
     from sugar.presence.tubeconn import TubeConnection
@@ -17,7 +17,7 @@ try:
 except ImportError, err:
     telepathy = None
 
-class OfflineError( Exception ):
+class OfflineError(Exception):
     """Raised when we cannot complete an operation due to being offline"""
 
 DBUS_IFACE="org.laptop.games.pygame"
@@ -228,7 +228,7 @@ def get_buddy(dbus_handle):
     cs_handle = instance().tube.bus_name_to_handle[dbus_handle]
     log.debug('Trying to find my handle in %s...', cs_handle)
     group = text_chan[telepathy.CHANNEL_INTERFACE_GROUP]
-    log.debug( 'Calling GetSelfHandle' )
+    log.debug('Calling GetSelfHandle')
     my_csh = group.GetSelfHandle()
     log.debug('My handle in that group is %s', my_csh)
     if my_csh == cs_handle:
@@ -276,7 +276,7 @@ class PygameTube(ExportedGObject):
     '''
     def __init__(self, tube, is_initiator, tube_id):
         super(PygameTube, self).__init__(tube, DBUS_PATH)
-        log.info( 'PygameTube init' )
+        log.info('PygameTube init')
         self.tube = tube
         self.is_initiator = is_initiator
         self.entered = False
@@ -290,7 +290,7 @@ class PygameTube(ExportedGObject):
 
 
     def participant_change_cb(self, added, removed):
-        log.debug( 'participant_change_cb: %s %s', added, removed )
+        log.debug('participant_change_cb: %s %s', added, removed)
         def nick(buddy):
             if buddy is not None:
                 return buddy.props.nick
@@ -345,7 +345,7 @@ class PygameTube(ExportedGObject):
 
 def send_to(handle, content=""):
     '''Sends the given message to the given buddy identified by handle.'''
-    log.debug( 'send_to: %s %s', handle, content )
+    log.debug('send_to: %s %s', handle, content)
     remote_proxy = dbus_get_object(handle, DBUS_PATH)
     remote_proxy.Tell(content, reply_handler=dbus_msg, error_handler=dbus_err)
 
@@ -356,7 +356,7 @@ def dbus_err(e):
 
 def broadcast(content=""):
     '''Sends the given message to all participants.'''
-    log.debug( 'Broadcast: %s', content )
+    log.debug('Broadcast: %s', content)
     instance().Broadcast(content)
 
 def my_handle():
@@ -366,22 +366,22 @@ def my_handle():
     not yet got a unique ID assigned by the bus.  You may need 
     to delay calling until you are sure you are connected.
     '''
-    log.debug( 'my handle' )
+    log.debug('my handle')
     return instance().tube.get_unique_name()
 
 def is_initiator():
     '''Returns the handle of this user.'''
-    log.debug( 'is initiator' )
+    log.debug('is initiator')
     return instance().is_initiator
 
 def get_participants():
     '''Returns the list of active participants, in order of arrival.
     List is maintained by the activity creator; if that person leaves it may not stay in sync.'''
-    log.debug( 'get_participants' )
+    log.debug('get_participants')
     try:
         return instance().ordered_bus_names[:]
     except IndexError, err:
-        return [] # no participants yet, as we don't yet have a connection
+        return []  # no participants yet, as we don't yet have a connection
 
 def dbus_get_object(handle, path):
     '''Get a D-bus object from another participant.
@@ -394,5 +394,5 @@ def dbus_get_object(handle, path):
     choose; when you want a reference to the corresponding remote
     object on a participant, call this method.
     '''
-    log.debug( 'dbus_get_object: %s %s', handle, path )
+    log.debug('dbus_get_object: %s %s', handle, path)
     return instance().tube.get_object(handle, path)
