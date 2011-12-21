@@ -149,24 +149,24 @@ class PangoFont(object):
     def set_italic( self, italic=True ):
         """Set our "italic" value (style)"""
         if italic:
-            self.set_style( self.STYLE_ITALIC )
+            self.set_style(self.STYLE_ITALIC)
         else:
-            self.set_style( self.STYLE_NORMAL )
-    def set_style( self, style ):
+            self.set_style(self.STYLE_NORMAL)
+    def set_style(self, style):
         """Set our font description's pango-style"""
-        self.fd.set_style( style )
+        self.fd.set_style(style)
         return self.fd.get_style()
-    def get_style( self ):
+    def get_style(self):
         """Get our font description's pango-style"""
         return self.fd.get_style()
-    def get_italic( self ):
+    def get_italic(self):
         """Return whether we are currently italicised"""
-        return self.fd.get_style() == self.STYLE_ITALIC # what about oblique?
+        return self.fd.get_style() == self.STYLE_ITALIC  # what about oblique?
     
-    def set_underline( self, underline=True ):
+    def set_underline(self, underline=True):
         """Set our current underlining properly"""
         self.underline = underline
-    def get_underline( self ):
+    def get_underline(self):
         return self.underline
 
 class SysFont(PangoFont):
