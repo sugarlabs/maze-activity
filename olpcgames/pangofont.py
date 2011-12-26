@@ -23,7 +23,7 @@ log = logging.getLogger( 'olpcgames.pangofont' )
 # Install myself on top of pygame.font
 def install():
     """Replace Pygame's font module with this module"""
-    log.info( 'installing' )
+    log.info('installing')
     from olpcgames import pangofont
     import pygame
     pygame.font = pangofont
@@ -68,7 +68,7 @@ class PangoFont(object):
         self.set_italic( italic )
         self.set_underline( underline )
 
-    def render(self, text, antialias=True, color=(255,255,255), background=None ):
+    def render(self, text, antialias=True, color=(255,255,255), background=None):
         """Render the font onto a new Surface and return it.
         We ignore 'antialias' and use system settings.
         
@@ -81,7 +81,7 @@ class PangoFont(object):
         
         returns a pygame image instance
         """
-        log.info( 'render: %r, antialias = %s, color=%s, background=%s', text, antialias, color, background )
+        log.info('render: %r, antialias = %s, color=%s, background=%s', text, antialias, color, background)
 
         # create layout
         layout = pango.Layout(gtk.gdk.pango_context_get())
@@ -91,7 +91,7 @@ class PangoFont(object):
             if not attrs:
                 attrs = pango.AttrList()
             attrs.insert(pango.AttrUnderline(pango.UNDERLINE_SINGLE, 0, 32767))
-            layout.set_attributes( attrs )
+            layout.set_attributes(attrs)
         layout.set_text(text)
 
         # determine pixel size
@@ -99,7 +99,7 @@ class PangoFont(object):
         ink = pygame.rect.Rect(ink)
 
         # Create a new Cairo ImageSurface
-        csrf,cctx = _cairoimage.newContext( ink.w, ink.h )
+        csrf,cctx = _cairoimage.newContext(ink.w, ink.h)
         cctx = pangocairo.CairoContext(cctx)
 
         # Mangle the colors on little-endian machines. The reason for this 
@@ -110,13 +110,13 @@ class PangoFont(object):
 
         # render onto it
         if background is not None:
-            background = _cairoimage.mangle_color( background )
+            background = _cairoimage.mangle_color(background)
             cctx.set_source_rgba(*background)
             cctx.paint()
         
-        log.debug( 'incoming color: %s', color )
-        color = _cairoimage.mangle_color( color )
-        log.debug( '  translated color: %s', color )
+        log.debug('incoming color: %s', color)
+        color = _cairoimage.mangle_color(color)
+        log.debug('  translated color: %s', color)
 
         cctx.new_path()
         cctx.layout_path(layout)
@@ -124,7 +124,7 @@ class PangoFont(object):
         cctx.fill()
 
         # Create and return a new Pygame Image derived from the Cairo Surface
-        return _cairoimage.asImage( csrf )
+        return _cairoimage.asImage(csrf)
     
     def set_bold( self, bold=True):
         """Set our font description's weight to "bold" or "normal"
@@ -132,21 +132,21 @@ class PangoFont(object):
         bold -- boolean, whether to set the value to "bold" weight or not 
         """
         if bold:
-            self.set_weight(  self.WEIGHT_BOLD )
+            self.set_weight(self.WEIGHT_BOLD)
         else:
-            self.set_weight(  self.WEIGHT_NORMAL )
-    def set_weight( self, weight ):
+            self.set_weight(self.WEIGHT_NORMAL)
+    def set_weight(self, weight):
         """Explicitly set our pango-style weight value"""
-        self.fd.set_weight(  weight )
+        self.fd.set_weight(weight)
         return self.get_weight()
-    def get_weight( self ):
+    def get_weight(self):
         """Explicitly get our pango-style weight value"""
         return self.fd.get_weight()
-    def get_bold( self ):
+    def get_bold(self):
         """Return whether our font's weight is bold (or above)"""
         return self.fd.get_weight() >= pango.WEIGHT_BOLD
     
-    def set_italic( self, italic=True ):
+    def set_italic(self, italic=True):
         """Set our "italic" value (style)"""
         if italic:
             self.set_style(self.STYLE_ITALIC)
@@ -274,6 +274,6 @@ def stdcolor(color):
         else:
             raise TypeError("What sort of color is this: %s" % (color,))
     return [_fixColorBase(x) for x in fixlen(color)]
-def _fixColorBase( v ):
+def _fixColorBase(v):
     """Return a properly clamped colour in floating-point space"""
     return max((0,min((v,255.0))))/255.0
