@@ -137,6 +137,7 @@ class MazeGame:
         # clear and mark the whole screen as dirty
         self.screen.fill((0,0,0))
         self.markRectDirty(pygame.Rect(0,0,99999,99999))
+        self.mouse_in_use = 0
 
     def markRectDirty(self, rect):
         """Mark an area that needs to be redrawn.  This lets us
@@ -181,8 +182,38 @@ class MazeGame:
                     mesh.broadcast("move:%s,%d,%d,%d,%d" % (player.nick, player.position[0], player.position[1], player.direction[0], player.direction[1]))
         elif event.type == pygame.KEYUP:
             pass
-        elif event.type in (pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
+        elif event.type == pygame.MOUSEMOTION:
             pass
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            self.mouse_in_use = 1
+            self.prev_mouse_pos = pygame.mouse.get_pos()
+
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if self.mouse_in_use:
+                new_mouse_pos = pygame.mouse.get_pos()
+                mouse_movement = ( new_mouse_pos[0] - self.prev_mouse_pos[0],
+                                   new_mouse_pos[1] - self.prev_mouse_pos[1] )
+
+                if ((abs(mouse_movement[0]) > 10) or
+                    (abs(mouse_movement[1]) > 10)) :
+                    player = self.localplayers[0]
+                    player.hidden = False
+                    if abs(mouse_movement[0]) > abs(mouse_movement[1]):  #  x movement larger
+                        if mouse_movement[0] > 0: # direction == pygame.K_RIGHT
+                            player.direction=(1,0)
+                        else:                     # direction == pygame.K_LEFT
+                            player.direction=(-1,0)
+                    else:
+                        if mouse_movement[1] < 0: # direction == pygame.K_UP
+                            player.direction=(0,-1)
+                        else:                     # direction == pygame.K_DOWN
+                            player.direction=(0,1)
+
+                    if len(self.remoteplayers)>0:
+                        mesh.broadcast("move:%s,%d,%d,%d,%d" % (player.nick, player.position[0], player.position[1], player.direction[0], player.direction[1]))
+
+            self.mouse_in_use = 0
+
         elif event.type == mesh.CONNECT:
             print "Connected to the mesh."
         elif event.type == mesh.PARTICIPANT_ADD:
