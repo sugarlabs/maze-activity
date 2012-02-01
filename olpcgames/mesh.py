@@ -32,13 +32,13 @@ DBUS_SERVICE = None
 the activity from the Neighborhood screen).
 Event properties:
   id: a unique identifier for this connection. (shouldn't be needed for anything)'''
-CONNECT            = 9912
+CONNECT = 9912
 
 '''A participant joined the activity. This will trigger for the local user
 as well as any arriving remote users.
 Event properties:
   handle: the arriving user's handle.'''
-PARTICIPANT_ADD    = 9913
+PARTICIPANT_ADD = 9913
 
 '''A participant quit the activity.
 Event properties:
@@ -49,13 +49,13 @@ PARTICIPANT_REMOVE = 9914
 Event properties:
    content: the content of the message (a string)
    handle: the handle of the sending user.'''
-MESSAGE_UNI        = 9915
+MESSAGE_UNI = 9915
 
 '''A message was sent to everyone.
 Event properties:
    content: the content of the message (a string)
    handle: the handle of the sending user.'''
-MESSAGE_MULTI      = 9916
+MESSAGE_MULTI = 9916
 
 
 # Private objects for useful purposes!
@@ -67,11 +67,13 @@ joining = False
 
 connect_callback = None
 
+
 def is_initiating():
     '''A version of is_initiator that's a bit less goofy, and can be used
     before the Tube comes up.'''
     global initiating
     return initiating
+
 
 def is_joining():
     '''Returns True if the activity was started up by means of the
@@ -79,12 +81,14 @@ def is_joining():
     global joining
     return joining
 
+
 def set_connect_callback(cb):
     '''Just the same as the Pygame event loop can listen for CONNECT,
     this is just an ugly callback that the glib side can use to be aware
     of when the Tube is ready.'''
     global connect_callback
     connect_callback = cb
+
 
 def activity_shared(activity):
     '''Called when the user clicks Share.'''
@@ -94,10 +98,9 @@ def activity_shared(activity):
 
     _setup(activity)
 
-
     log.debug('This is my activity: making a tube...')
     channel = tubes_chan[telepathy.CHANNEL_TYPE_TUBES]
-    if hasattr( channel, 'OfferDBusTube' ):
+    if hasattr(channel, 'OfferDBusTube'):
         id = channel.OfferDBusTube(
             DBUS_SERVICE, {})
     else:
@@ -108,6 +111,7 @@ def activity_shared(activity):
     if connect_callback is not None:
         connect_callback()
 
+
 def activity_joined(activity):
     '''Called at the startup of our Activity, when the user started it via Neighborhood intending to join an existing activity.'''
 
@@ -117,12 +121,10 @@ def activity_joined(activity):
     for buddy in activity._shared_activity.get_joined_buddies():
         log.debug('Buddy %s is already in the activity' % buddy.props.nick)
 
-
     global initiating
     global joining
     initiating = False
     joining = True
-
 
     _setup(activity)
 
@@ -134,14 +136,14 @@ def activity_joined(activity):
     if connect_callback is not None:
         connect_callback()
 
+
 def _getConn():
-    log.info( '_getConn' )
+    log.info('_getConn')
     pservice = _get_presence_service()
     name, path = pservice.get_preferred_connection()
     global conn
     conn = telepathy.client.Connection(name, path)
     return conn
-
 
 
 def _setup(activity):
@@ -196,13 +198,14 @@ setup(sugar.activity.Activity, telepathy.client.Connection)'''
 
     return (text_chan, tubes_chan)
 
+
 def new_tube_cb(id, initiator, type, service, params, state):
     log.debug("New_tube_cb called: %s %s %s" % (id, initiator, type))
     if (type == telepathy.TUBE_TYPE_DBUS and service == DBUS_SERVICE):
         if state == telepathy.TUBE_STATE_LOCAL_PENDING:
             channel = tubes_chan[telepathy.CHANNEL_TYPE_TUBES]
-            if hasattr( channel, 'AcceptDBusTube' ):
-                channel.AcceptDBusTube( id )
+            if hasattr(channel, 'AcceptDBusTube'):
+                channel.AcceptDBusTube(id)
             else:
                 channel.AcceptTube(id)
 
@@ -218,9 +221,9 @@ def _list_tubes_reply_cb(tubes):
     for tube_info in tubes:
         new_tube_cb(*tube_info)
 
+
 def _list_tubes_error_cb(e):
     log.error('ListTubes() failed: %s', e)
-
 
 
 def get_buddy(dbus_handle):
@@ -248,7 +251,8 @@ def get_buddy(dbus_handle):
     name, path = pservice.get_preferred_connection()
     return pservice.get_buddy_by_telepathy_handle(name, path, handle)
 
-def _get_presence_service( ):
+
+def _get_presence_service():
     """Attempt to retrieve the presence service (check for offline condition)
 
     The presence service, when offline, has no preferred connection type,
@@ -258,16 +262,18 @@ def _get_presence_service( ):
     pservice = sugar.presence.presenceservice.get_instance()
     try:
         name, path = pservice.get_preferred_connection()
-    except (TypeError,ValueError), err:
-        log.warn('Working in offline mode, cannot retrieve buddy information for %s: %s', handle, err )
-        raise OfflineError( """Unable to retrieve buddy information, currently offline""" )
+    except (TypeError, ValueError), err:
+        log.warn('Working in offline mode, cannot retrieve buddy information for %s: %s', handle, err)
+        raise OfflineError("""Unable to retrieve buddy information, currently offline""")
     else:
         return pservice
+
 
 def instance(idx=0):
     return pygametubes[idx]
 
-import eventwrap,pygame.event as PEvent
+import eventwrap, pygame.event as PEvent
+
 
 class PygameTube(ExportedGObject):
     '''The object whose instance is shared across D-bus
@@ -289,9 +295,9 @@ class PygameTube(ExportedGObject):
         self.tube.watch_participants(self.participant_change_cb)
         self.tube.add_signal_receiver(self.broadcast_cb, 'Broadcast', DBUS_IFACE, path=DBUS_PATH, sender_keyword='sender')
 
-
     def participant_change_cb(self, added, removed):
         log.debug('participant_change_cb: %s %s', added, removed)
+        
         def nick(buddy):
             if buddy is not None:
                 return buddy.props.nick
@@ -344,21 +350,27 @@ class PygameTube(ExportedGObject):
             log.warn("ordered bus names out of sync with server, resyncing")
             self.ordered_bus_names = new_bus_names
 
+
 def send_to(handle, content=""):
     '''Sends the given message to the given buddy identified by handle.'''
     log.debug('send_to: %s %s', handle, content)
     remote_proxy = dbus_get_object(handle, DBUS_PATH)
     remote_proxy.Tell(content, reply_handler=dbus_msg, error_handler=dbus_err)
 
+
 def dbus_msg():
     log.debug("async reply to send_to")
+
+
 def dbus_err(e):
     log.error("async error: %s" % e)
+
 
 def broadcast(content=""):
     '''Sends the given message to all participants.'''
     log.debug('Broadcast: %s', content)
     instance().Broadcast(content)
+
 
 def my_handle():
     '''Returns the handle of this user
@@ -370,10 +382,12 @@ def my_handle():
     log.debug('my handle')
     return instance().tube.get_unique_name()
 
+
 def is_initiator():
     '''Returns the handle of this user.'''
     log.debug('is initiator')
     return instance().is_initiator
+
 
 def get_participants():
     '''Returns the list of active participants, in order of arrival.
@@ -383,6 +397,7 @@ def get_participants():
         return instance().ordered_bus_names[:]
     except IndexError, err:
         return []  # no participants yet, as we don't yet have a connection
+
 
 def dbus_get_object(handle, path):
     '''Get a D-bus object from another participant.
