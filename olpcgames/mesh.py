@@ -21,8 +21,8 @@ except ImportError, err:
 class OfflineError(Exception):
     """Raised when we cannot complete an operation due to being offline"""
 
-DBUS_IFACE="org.laptop.games.pygame"
-DBUS_PATH="/org/laptop/games/pygame"
+DBUS_IFACE = "org.laptop.games.pygame"
+DBUS_PATH = "/org/laptop/games/pygame"
 DBUS_SERVICE = None
 
 
