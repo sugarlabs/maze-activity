@@ -17,6 +17,7 @@ try:
 except ImportError, err:
     telepathy = None
 
+
 class OfflineError(Exception):
     """Raised when we cannot complete an operation due to being offline"""
 
