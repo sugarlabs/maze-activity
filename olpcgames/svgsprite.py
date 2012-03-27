@@ -1,10 +1,16 @@
 """RSVG/Cairo-based rendering of SVG into Pygame Images"""
-from pygame import sprite
+from pygame import sprite, Rect
 from olpcgames import _cairoimage
-import cairo, rsvg
 
 class SVGSprite( sprite.Sprite ):
-    """Sprite class which renders SVG source-code as a Pygame image"""
+    """Sprite class which renders SVG source-code as a Pygame image
+    
+    Note:
+    
+        Currently this sprite class is a bit over-engineered, it gets in the way 
+        if you want to, e.g. animate among a number of SVG drawings, as it 
+        assumes that setSVG will always set a single SVG file for rendering.
+    """
     rect = image = None
     resolution = None
     def __init__( 
@@ -30,7 +36,7 @@ class SVGSprite( sprite.Sprite ):
             width,height = self.size
         else:
             width,height = None,None
-        self.image = self._render( width,height )
+        self.image = self._render( width,height ).convert_alpha()
         rect = self.image.get_rect()
         if self.rect:
             rect.move( self.rect ) # should let something higher-level do that...
@@ -38,6 +44,7 @@ class SVGSprite( sprite.Sprite ):
 
     def _render( self, width, height ):
         """Render our SVG to a Pygame image"""
+        import rsvg
         handle = rsvg.Handle( data = self.svg )
         originalSize = (width,height)
         scale = 1.0
@@ -66,4 +73,12 @@ class SVGSprite( sprite.Sprite ):
             handle.render_cairo( ctx )
             return _cairoimage.asImage( csrf )
         return None
-    
+    def copy( self ):
+        """Create a copy of this sprite without reloading the svg image"""
+        result = self.__class__(
+            size = self.size
+        )
+        result.image = self.image 
+        result.rect = Rect(self.rect)
+        result.resolution = self.resolution
+        return result

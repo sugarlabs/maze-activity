@@ -7,7 +7,7 @@ import pygame
 from olpcgames import eventwrap
 import logging 
 log = logging.getLogger( 'olpcgames.gtkevent' )
-#log.setLevel( logging.DEBUG )
+##log.setLevel( logging.DEBUG )
 
 class _MockEvent(object):
     """Used to inject key-repeat events on the gtk side."""
@@ -98,13 +98,29 @@ class Translator(object):
         self.__tick_id = None
 
         #print "translator  initialized"
-        mainwindow.connect( 'expose-event', self.do_expose_event )
+        self._inner_evb.connect( 'expose-event', self.do_expose_event )
+#        screen = gtk.gdk.screen_get_default()
+#        screen.connect( 'size-changed', self.do_resize_event )
+        self._inner_evb.connect( 'configure-event', self.do_resize_event )
     def do_expose_event(self, event, widget):
         """Handle exposure event (trigger redraw by gst)"""
         log.info( 'Expose event: %s', event )
         from olpcgames import eventwrap
         eventwrap.post( eventwrap.Event( eventwrap.pygame.VIDEOEXPOSE ))
         return True
+    def do_resize_event( self, activity, event ):
+        """Our screen (actually, the default screen) has resized"""
+        log.info( 'Resize event: %s %s', activity, event )
+        log.info( 'Event values: %s', (event.width,event.height) )
+#        from olpcgames import eventwrap
+#        # shouldn't the activity's window have this information too?
+#        eventwrap.post( 
+#            eventwrap.Event( 
+#                eventwrap.pygame.VIDEORESIZE, 
+#                dict(size=(event.width,event.height), width=event.width, height=event.height) 
+#            )
+#        )
+        return False # continue processing
     def hook_pygame(self):
         """Hook the various Pygame features so that we implement the event APIs"""
         # Pygame should be initialized. Hijack their key and mouse methods
@@ -164,6 +180,9 @@ class Translator(object):
             keycode = getattr(pygame, 'K_'+key.upper())
         elif hasattr(pygame, 'K_'+key.lower()):
             keycode = getattr(pygame, 'K_'+key.lower())
+        elif key == 'XF86Start':
+            # view source request, specially handled...
+            self._mainwindow.view_source()
         else:
             print 'Key %s unrecognized'%key
             

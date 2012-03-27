@@ -23,8 +23,15 @@
 
 import sys
 import time
-
+try:
+    import json
+except ImportError:
+    import simplejson as json
 import pygame
+import olpcgames
+
+import logging
+log = logging.getLogger('Maze')
 
 import olpcgames.pausescreen as pausescreen
 import olpcgames.mesh as mesh
@@ -94,8 +101,14 @@ class MazeGame:
 
         # start with a small maze using a seed that will be different
         # each time you play
-        self.maze = Maze(int(time.time()), int(9 * self.aspectRatio), 9)
+        data = {'seed': int(time.time()),
+                'width': int(9 * self.aspectRatio),
+                'height': 9}
+
+        log.debug('Starting the game with: %s', data)
+        self.maze = Maze(**data)
         self.reset()
+
         self.frame = 0
 
         self.font = pygame.font.Font(None, 30)
@@ -283,8 +296,33 @@ class MazeGame:
                     (event, sys.exc_info())
             else:
                 print "Message from unknown buddy?"
+
+        elif event.type == pygame.USEREVENT:
+            # process file save / restore events
+            if event.code == olpcgames.FILE_READ_REQUEST:
+                log.debug('Loading the state of the game...')
+                state = json.loads(event.metadata['state'])
+                log.debug('Loaded data: %s', state)
+                self.maze = Maze(**state)
+                self.reset()
+                return True
+            elif event.code == olpcgames.FILE_WRITE_REQUEST:
+                log.debug('Saving the state of the game...')
+                data = {'seed': self.maze.seed,
+                        'width': self.maze.width,
+                        'height': self.maze.height,
+                    }
+                log.debug('Saving data: %s', data)
+                event.metadata['state'] = json.dumps(data)
+                f = open(event.filename, 'w')
+                try:
+                    f.write(str(time.time()))
+                finally:
+                    f.close()
+                log.debug('Done saving.')
+                return True
         else:
-            print "Unknown event:", event
+            log.debug('Unknown event: %r', event)
 
     def handleMessage(self, player, message):
         """Handle a message from a player on the mesh.
@@ -357,11 +395,12 @@ class MazeGame:
     def run(self):
         """Run the main loop of the game."""
         # lets draw once before we enter the event loop
-        self.draw()
-        pygame.display.flip()
+
         clock = pygame.time.Clock()
+        pygame.display.flip()
 
         while self.running:
+            clock.tick(25)
             a, b, c, d = pygame.cursors.load_xbm('my_cursor.xbm',
                                                  'my_cursor_mask.xbm')
             pygame.mouse.set_cursor(a, b, c, d)

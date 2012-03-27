@@ -5,25 +5,61 @@ Depends on:
     pygtk (to get the pango context)
     pycairo (for the pango rendering context)
     python-pango (obviously)
-    pygame (obviously)
+    numpy
+    (pygame)
+
+As soon as you import this module you have loaded *all* of the above.
+You can still use pygame.font until you decide to call install(), which 
+will replace pygame.font with this module.
+
+Notes:
+
+    * no ability to load TTF files, PangoFont uses the font files registered 
+        with GTK/X to render graphics, it cannot load an arbitrary TTF file.  
+        Most non-Sugar Pygame games use bundled TTF files, which means 
+        that you will likely need at least some changes to your font handling.
+        
+        Note, however, that the Pygame Font class is available to load the TTF 
+        files, so if you don't want to take advantage of PangoFont for already 
+        written code, but want to use it for "system font" operations, you can 
+        mix the two.
+        
+    * metrics are missing, Pango can provide the information, but the more 
+        involved metrics system means that translating to the simplified model 
+        in Pygame has as of yet not been accomplished.
+        
+    * better support for "exotic" languages and scripts (which is why we use it)
+
+The main problem with SDL_ttf is that it doesn't handle internationalization 
+nearly as well as Pango (in fact, pretty much nothing does). However, it is 
+fairly fast and it has a rich interface. You should avoid fonts where possible, 
+prerender using Pango for internationalizable text, and use Pango or SDL_ttf 
+for text that really needs to be rerendered each frame. (Use SDL_ttf if profiling 
+demonstrates that performance is poor with Pango.)
+
+Note:
+    Font -- is the original Pygame Font class, which allows you to load 
+        fonts from TTF files/filenames
+    PangoFont -- is the Pango-specific rendering engine which allows 
+        for the more involved cross-lingual rendering operations.
 """
 import pango
 import logging
-import cairo
 import pangocairo
 import pygame.rect, pygame.image
 import gtk
 import struct
 from pygame import surface
+from pygame.font import Font
 from olpcgames import _cairoimage
 
 log = logging.getLogger( 'olpcgames.pangofont' )
-#log.setLevel( logging.DEBUG )
+##log.setLevel( logging.DEBUG )
 
 # Install myself on top of pygame.font
 def install():
     """Replace Pygame's font module with this module"""
-    log.info('installing')
+    log.info( 'installing' )
     from olpcgames import pangofont
     import pygame
     pygame.font = pangofont
@@ -62,13 +98,16 @@ class PangoFont(object):
             if family is not None:
                 fd.set_family(family)
             if size is not None:
-                fd.set_size(size*1000)
+                log.debug( 'Pre-conversion size: %s', size )
+                size = int(size*1024)
+                log.debug( 'Font size: %s', size, )
+                fd.set_size(size) # XXX magic number, pango's scaling
         self.fd = fd
         self.set_bold( bold )
         self.set_italic( italic )
         self.set_underline( underline )
 
-    def render(self, text, antialias=True, color=(255,255,255), background=None):
+    def render(self, text, antialias=True, color=(255,255,255), background=None ):
         """Render the font onto a new Surface and return it.
         We ignore 'antialias' and use system settings.
         
@@ -81,25 +120,15 @@ class PangoFont(object):
         
         returns a pygame image instance
         """
-        log.info('render: %r, antialias = %s, color=%s, background=%s', text, antialias, color, background)
+        log.info( 'render: %r, antialias = %s, color=%s, background=%s', text, antialias, color, background )
 
-        # create layout
-        layout = pango.Layout(gtk.gdk.pango_context_get())
-        layout.set_font_description(self.fd)
-        if self.underline:
-            attrs = layout.get_attributes()
-            if not attrs:
-                attrs = pango.AttrList()
-            attrs.insert(pango.AttrUnderline(pango.UNDERLINE_SINGLE, 0, 32767))
-            layout.set_attributes(attrs)
-        layout.set_text(text)
-
+        layout = self._createLayout( text )
         # determine pixel size
         (logical, ink) = layout.get_pixel_extents()
         ink = pygame.rect.Rect(ink)
 
         # Create a new Cairo ImageSurface
-        csrf,cctx = _cairoimage.newContext(ink.w, ink.h)
+        csrf,cctx = _cairoimage.newContext( ink.w, ink.h )
         cctx = pangocairo.CairoContext(cctx)
 
         # Mangle the colors on little-endian machines. The reason for this 
@@ -110,13 +139,13 @@ class PangoFont(object):
 
         # render onto it
         if background is not None:
-            background = _cairoimage.mangle_color(background)
+            background = _cairoimage.mangle_color( background )
             cctx.set_source_rgba(*background)
             cctx.paint()
         
-        log.debug('incoming color: %s', color)
-        color = _cairoimage.mangle_color(color)
-        log.debug('  translated color: %s', color)
+        log.debug( 'incoming color: %s', color )
+        color = _cairoimage.mangle_color( color )
+        log.debug( '  translated color: %s', color )
 
         cctx.new_path()
         cctx.layout_path(layout)
@@ -124,7 +153,7 @@ class PangoFont(object):
         cctx.fill()
 
         # Create and return a new Pygame Image derived from the Cairo Surface
-        return _cairoimage.asImage(csrf)
+        return _cairoimage.asImage( csrf )
     
     def set_bold( self, bold=True):
         """Set our font description's weight to "bold" or "normal"
@@ -132,42 +161,77 @@ class PangoFont(object):
         bold -- boolean, whether to set the value to "bold" weight or not 
         """
         if bold:
-            self.set_weight(self.WEIGHT_BOLD)
+            self.set_weight(  self.WEIGHT_BOLD )
         else:
-            self.set_weight(self.WEIGHT_NORMAL)
-    def set_weight(self, weight):
+            self.set_weight(  self.WEIGHT_NORMAL )
+    def set_weight( self, weight ):
         """Explicitly set our pango-style weight value"""
-        self.fd.set_weight(weight)
+        self.fd.set_weight(  weight )
         return self.get_weight()
-    def get_weight(self):
+    def get_weight( self ):
         """Explicitly get our pango-style weight value"""
         return self.fd.get_weight()
-    def get_bold(self):
+    def get_bold( self ):
         """Return whether our font's weight is bold (or above)"""
         return self.fd.get_weight() >= pango.WEIGHT_BOLD
     
-    def set_italic(self, italic=True):
+    def set_italic( self, italic=True ):
         """Set our "italic" value (style)"""
         if italic:
-            self.set_style(self.STYLE_ITALIC)
+            self.set_style( self.STYLE_ITALIC )
         else:
-            self.set_style(self.STYLE_NORMAL)
-    def set_style(self, style):
+            self.set_style( self.STYLE_NORMAL )
+    def set_style( self, style ):
         """Set our font description's pango-style"""
-        self.fd.set_style(style)
+        self.fd.set_style( style )
         return self.fd.get_style()
-    def get_style(self):
+    def get_style( self ):
         """Get our font description's pango-style"""
         return self.fd.get_style()
-    def get_italic(self):
+    def get_italic( self ):
         """Return whether we are currently italicised"""
-        return self.fd.get_style() == self.STYLE_ITALIC  # what about oblique?
+        return self.fd.get_style() == self.STYLE_ITALIC # what about oblique?
     
-    def set_underline(self, underline=True):
+    def set_underline( self, underline=True ):
         """Set our current underlining properly"""
         self.underline = underline
-    def get_underline(self):
+    def get_underline( self ):
+        """Retrieve our current underline setting"""
         return self.underline
+
+    def _createLayout( self, text ):
+        """Produces a Pango layout describing this text in this font"""
+        # create layout
+        layout = pango.Layout(gtk.gdk.pango_context_get())
+        layout.set_font_description(self.fd)
+        if self.underline:
+            attrs = layout.get_attributes()
+            if not attrs:
+                attrs = pango.AttrList()
+            attrs.insert(pango.AttrUnderline(pango.UNDERLINE_SINGLE, 0, 32767))
+            layout.set_attributes( attrs )
+        layout.set_text(text)
+        return layout
+
+    def size( self, text ):
+        """Determine space required to render given text
+        
+        returns tuple of (width,height)
+        """
+        layout = self._createLayout( text )
+        (logical, ink) = layout.get_pixel_extents()
+        ink = pygame.rect.Rect(ink)
+        return (ink.width,ink.height)
+    
+##    def get_linesize( self ):
+##        """Determine inter-line spacing for the font"""
+##        font = self.get_context().load_font( self.fd )
+##        metrics = font.get_metrics()
+##        return pango.PIXELS( metrics.get_ascent() )
+##        def get_height( self ):
+##        def get_ascent( self ):
+##        def get_descent( self ):
+        
 
 class SysFont(PangoFont):
     """Construct a PangoFont from a font description (name), size in pixels,
@@ -184,17 +248,20 @@ class SysFont(PangoFont):
 # originally defined a new class, no reason for that...
 NotImplemented = NotImplementedError
 
-class Font(PangoFont):
-    """Abstract class, do not use"""
-    def __init__(self, *args, **kwargs):
-        raise NotImplementedError("PangoFont doesn't support Font directly, use SysFont or .fontByDesc")
-
 def match_font(name,bold=False,italic=False):
     """Stub, does not work, use fontByDesc instead"""
     raise NotImplementedError("PangoFont doesn't support match_font directly, use SysFont or .fontByDesc")
 
 def fontByDesc(desc="",bold=False,italic=False):
     """Constructs a FontDescription from the given string representation.
+    
+The format of the fontByDesc string representation is passed directly 
+to the pango.FontDescription constructor and documented at:
+
+    http://www.pygtk.org/docs/pygtk/class-pangofontdescription.html#constructor-pangofontdescription
+
+Bold and italic are provided as a convenience.
+
 The format of the string representation is:
 
   "[FAMILY-LIST] [STYLE-OPTIONS] [SIZE]"
@@ -274,6 +341,6 @@ def stdcolor(color):
         else:
             raise TypeError("What sort of color is this: %s" % (color,))
     return [_fixColorBase(x) for x in fixlen(color)]
-def _fixColorBase(v):
+def _fixColorBase( v ):
     """Return a properly clamped colour in floating-point space"""
     return max((0,min((v,255.0))))/255.0

@@ -1,11 +1,18 @@
-"""Video widget for displaying a gstreamer pipe"""
+"""Video widget for displaying a gstreamer pipe
+
+Note: currently this module is not all that elegant or useful,
+we need a better recipe for using and working with Video 
+under OLPCGames.
+"""
 import logging
 log = logging.getLogger( 'olpcgames.video' )
 #log.setLevel( logging.INFO )
 import os
 import signal
 import pygame
+import weakref
 import olpcgames
+from olpcgames import _gtkmain
 
 import pygtk
 pygtk.require('2.0')
@@ -79,6 +86,7 @@ class PygameWidget( object ):
             window_id = int(os.environ['SDL_WINDOWID'])
         self.window_id = window_id
         self._imagesink = None 
+        #self._holder = _gtkmain.Holder()
     def set_sink( self, sink ):
         """Set up our gst sink"""
         log.info( 'Setting sink: %s', sink )
@@ -149,7 +157,7 @@ if __name__ == "__main__":
         display.flip()
         
         pgw = PygameWidget( )
-        p = Player( pgw )
+        p = Player( pgw, pipe_desc=Player.test_pipe_desc )
         p.play()
         
         clock = pygame.time.Clock()

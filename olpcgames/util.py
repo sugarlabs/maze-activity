@@ -58,11 +58,22 @@ def get_traceback(error):
             util.get_traceback( err ),
         )
     """
-    exception = str(error)
-    file = cStringIO.StringIO()
-    try:
-        traceback.print_exc( limit=10, file = file )
-        exception = file.getvalue()
-    finally:
-        file.close()
-    return exception
+    if error is None:
+        error = []
+        for (f,l,func,statement) in traceback.extract_stack()[:-2]:
+            if statement:
+                statement = ': %s'%( statement, )
+            if func:
+                error.append( '%s.%s (%s)%s'%( f,func,l, statement))
+            else:
+                error.append( '%s (%s)%s'%( f,l, statement))
+        return "\n".join( error )
+    else:
+        exception = str(error)
+        file = cStringIO.StringIO()
+        try:
+            traceback.print_exc( limit=10, file = file )
+            exception = file.getvalue()
+        finally:
+            file.close()
+        return exception
