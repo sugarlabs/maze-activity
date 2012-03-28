@@ -151,11 +151,11 @@ DBUS_SERVICE = None
 
 ### NEW PYGAME EVENTS ###
 
-CONNECT            = olpcgames.CONNECT
-PARTICIPANT_ADD    = olpcgames.PARTICIPANT_ADD
+CONNECT = olpcgames.CONNECT
+PARTICIPANT_ADD = olpcgames.PARTICIPANT_ADD
 PARTICIPANT_REMOVE = olpcgames.PARTICIPANT_REMOVE
-MESSAGE_UNI        = olpcgames.MESSAGE_UNI
-MESSAGE_MULTI      = olpcgames.MESSAGE_MULTI
+MESSAGE_UNI = olpcgames.MESSAGE_UNI
+MESSAGE_MULTI = olpcgames.MESSAGE_MULTI
 
 
 # Private objects for useful purposes!
