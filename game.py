@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Maze.activity
 # A simple multi-player maze game for the XO laptop.
 # http://wiki.laptop.org/go/Maze
