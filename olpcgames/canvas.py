@@ -2,7 +2,7 @@
 import os
 import sys
 import logging
-log = logging.getLogger( 'olpcgames.canvas' )
+log = logging.getLogger('olpcgames.canvas')
 ##log.setLevel( logging.DEBUG )
 import threading
 from pprint import pprint
@@ -13,8 +13,8 @@ import gtk
 import gobject
 import pygame
 
-from olpcgames import gtkEvent, util
-
+from olpcgames import gtkEvent
+from olpcgames import util
 __all__ = ['PygameCanvas']
 
 class PygameCanvas(gtk.Layout):
@@ -26,6 +26,7 @@ class PygameCanvas(gtk.Layout):
     window pointer, it draws to that X-level window in order to produce output.
     """
     mod_name = None
+    
     def __init__(self, width, height):
         """Initializes the Canvas Object
         
@@ -38,8 +39,8 @@ class PygameCanvas(gtk.Layout):
         sub-class, e.g. to get size from the host window, or something similar.
         """
         # Build the main widget
-        log.info( 'Creating the pygame canvas' )
-        super(PygameCanvas,self).__init__()
+        log.info('Creating the pygame canvas')
+        super(PygameCanvas, self).__init__()
         self.set_flags(gtk.CAN_FOCUS)
         
         # Build the sub-widgets
@@ -79,7 +80,7 @@ class PygameCanvas(gtk.Layout):
             Causes the gtkEvent.Translator to "hook" Pygame
             Creates and starts secondary thread for Game/Pygame event processing.
         """
-        log.info( 'Connecting the pygame canvas' )
+        log.info('Connecting the pygame canvas')
         # Setup the embedding
         os.environ['SDL_WINDOWID'] = str(self._socket.get_id())
         #print 'Socket ID=%s'%os.environ['SDL_WINDOWID']
@@ -102,13 +103,14 @@ class PygameCanvas(gtk.Layout):
 
     def _start(self, fn):
         """The method that actually runs in the background thread"""
-        log.info( 'Staring the mainloop' )
+        log.info('Staring the mainloop')
         import olpcgames
         olpcgames.widget = olpcgames.WIDGET = self
         try:
-            import sugar.activity.activity,os
+            import sugar.activity.activity
+            import os
         except ImportError, err:
-            log.info( """Running outside Sugar""" )
+            log.info("""Running outside Sugar""")
         else:
             try:
                 os.chdir(sugar.activity.activity.get_bundle_path())
@@ -118,7 +120,7 @@ class PygameCanvas(gtk.Layout):
         try:
             try:
                 try:
-                    log.info( '''Running mainloop: %s''', fn )
+                    log.info('''Running mainloop: %s''', fn)
                     fn()
                 except Exception, err:
                     log.error(
@@ -127,13 +129,13 @@ class PygameCanvas(gtk.Layout):
                     )
                     raise
                 else:
-                    log.info( "Mainloop exited" )
+                    log.info("Mainloop exited")
             finally:
-                log.debug( "Clearing any pending events" )
+                log.debug("Clearing any pending events")
                 from olpcgames import eventwrap
                 eventwrap.clear()
         finally:
-            log.info( 'Main function finished, calling main_quit' )
+            log.info('Main function finished, calling main_quit')
             gtk.main_quit()
 
     source_object_id = None
@@ -168,4 +170,4 @@ class PygameCanvas(gtk.Layout):
             from sugar.activity.activity import show_object_in_journal
             show_object_in_journal(object_id)
         except ImportError:
-            pass # no love from sugar.
+            pass  # no love from sugar.
