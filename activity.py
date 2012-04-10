@@ -1,4 +1,5 @@
-import gtk
+# -*- coding: utf-8 -*-
+
 import olpcgames
 import pygame
 

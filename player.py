@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Maze.activity
 # A simple multi-player maze game for the XO laptop.
 # http://wiki.laptop.org/go/Maze
@@ -32,7 +34,7 @@ import os
 class Player:
     def __init__(self, buddy, shape='circle'):
         self.buddy = buddy
-        self.nick = buddy.props.nick
+        self.nick = buddy.props.nick.decode("utf-8")
         colors = buddy.props.color.split(",")
         
         def string2Color(str):
