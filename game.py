@@ -298,8 +298,13 @@ class MazeGame:
                 print "Message from unknown buddy?"
 
         elif event.type == pygame.USEREVENT:
+            # process our buttons
+            if hasattr(event, 'action') and event.action == 'harder_button':
+                self.harder()
+            elif hasattr(event, 'action') and event.action == 'easier_button':
+                self.easier()
             # process file save / restore events
-            if event.code == olpcgames.FILE_READ_REQUEST:
+            elif event.code == olpcgames.FILE_READ_REQUEST:
                 log.debug('Loading the state of the game...')
                 state = json.loads(event.metadata['state'])
                 log.debug('Loaded data: %s', state)
