@@ -2,6 +2,7 @@
 
 import olpcgames
 import pygame
+import gtk
 
 from sugar.graphics.toolbutton import ToolButton
 from gettext import gettext as _
