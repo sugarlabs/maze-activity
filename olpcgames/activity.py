@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""Embeds the Canvas widget into a Sugar-specific Activity environment"""
+"""Embeds the Canvas widget into a Sugar-specific Activity environment
 
 The olpcgames.activity module encapsulates creation of a Pygame activity.
 Your Activity should inherit from this class. Simply setting some class 
