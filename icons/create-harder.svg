@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" [
+  <!ENTITY fill_color "#FFFFFF">
+  <!ENTITY stroke_color "#010101">
+]>
+<svg
+   xmlns="http://www.w3.org/2000/svg"
+   version="1.1"
+   width="50"
+   height="50"
+   viewBox="0 0 50 50"
+   id="svg2">
+  <path
+     d="m 25,5 0,5 0,5 -5,0 0,-5 -5,0 -5,0 -5,0 0,5 5,0 5,0 0,5 0,5 -5,0 0,-5 -5,0 0,5 0,5 5,0 5,0 0,5 -5,0 -5,0 0,5 0,5 5,0 0,-5 5,0 5,0 0,-5 0,-5 5,0 0,5 0,5 5,0 0,5 5,0 0,-5 0,-5 -5,0 0,-5 5,0 0,-5 -5,0 -5,0 -5,0 0,-5 5,0 5,0 5,0 5,0 0,5 0,5 5,0 0,-5 0,-5 0,-5 -5,0 -5,0 -5,0 0,-5 5,0 5,0 5,0 0,-5 -5,0 -5,0 -5,0 -5,0 z m 15,30 0,5 0,5 5,0 0,-5 0,-5 -5,0 z"
+     id="rect2992"
+     style="color:#000000;fill:&fill_color;;fill-opacity:1;stroke:none;stroke-width:2;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
+</svg>
