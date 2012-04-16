@@ -36,7 +36,7 @@ class Player:
     def __init__(self, buddy, shape='circle'):
         self.buddy = buddy
         name = buddy.props.nick.decode('utf-8')
-        self.nick = unicodedata.normalize('NFC',name)
+        self.nick = unicodedata.normalize('NFC', name)
         colors = buddy.props.color.split(",")
 
         def string2Color(str):
