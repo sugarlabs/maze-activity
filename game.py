@@ -244,37 +244,44 @@ class MazeGame:
             self.mouse_in_use = 0
 
         elif event.type == mesh.CONNECT:
-            print "Connected to the mesh."
+            log.debug("Connected to the mesh")
         elif event.type == mesh.PARTICIPANT_ADD:
-            buddy = mesh.get_buddy(event.handle)
-            if event.handle == mesh.my_handle():
-                print "Me:", buddy.props.nick, buddy.props.color
-            else:
-                print "Join:", buddy.props.nick, buddy.props.color
-                player = Player(buddy)
-                self.remoteplayers[event.handle] = player
-                self.allplayers.append(player)
-                self.allplayers.extend(player.bonusPlayers())
-                self.markPointDirty(player.position)
-                # send a test message to the new player
-                mesh.broadcast("Welcome %s" % player.nick)
-                # tell them which maze we are playing, so they can sync up
-                mesh.send_to(event.handle, "maze:%d,%d,%d,%d" % \
-                             (self.game_running_time(),
-                              self.maze.seed,
-                              self.maze.width, self.maze.height))
-                for player in self.localplayers:
-                    if not player.hidden:
-                        mesh.send_to(event.handle, "move:%s,%d,%d,%d,%d" % \
-                                     (player.nick,
-                                      player.position[0],
-                                      player.position[1],
-                                      player.direction[0],
-                                      player.direction[1]))
+            log.debug('mesh.PARTICIPANT_ADD')
+
+            def withBuddy(buddy):
+                if event.handle == mesh.my_handle():
+                    log.debug("Me: %s - %s", buddy.props.nick,
+                                  buddy.props.color)
+                else:
+                    log.debug("Join: %s - %s", buddy.props.nick,
+                                  buddy.props.color)
+                    player = Player(buddy)
+                    self.remoteplayers[event.handle] = player
+                    self.allplayers.append(player)
+                    self.allplayers.extend(player.bonusPlayers())
+                    self.markPointDirty(player.position)
+                    # send a test message to the new player
+                    mesh.broadcast("Welcome %s" % player.nick)
+                    # tell them which maze we are playing, so they can sync up
+                    mesh.send_to(event.handle, "maze:%d,%d,%d,%d" % \
+                                 (self.game_running_time(),
+                                  self.maze.seed,
+                                  self.maze.width, self.maze.height))
+                    for player in self.localplayers:
+                        if not player.hidden:
+                            mesh.send_to(event.handle, "move:%s,%d,%d,%d,%d" % \
+                                         (player.nick,
+                                          player.position[0],
+                                          player.position[1],
+                                          player.direction[0],
+                                          player.direction[1]))
+
+            mesh.lookup_buddy(event.handle, callback=withBuddy)
         elif event.type == mesh.PARTICIPANT_REMOVE:
+            log.debug('mesh.PARTICIPANT_REMOVE')
             if event.handle in self.remoteplayers:
                 player = self.remoteplayers[event.handle]
-                print "Leave:", player.nick
+                log.debug("Leave: %s", player.nick)
                 self.markPointDirty(player.position)
                 self.allplayers.remove(player)
                 for bonusplayer in player.bonusPlayers():
@@ -283,9 +290,7 @@ class MazeGame:
                 del self.remoteplayers[event.handle]
         elif event.type == mesh.MESSAGE_UNI or \
              event.type == mesh.MESSAGE_MULTI:
-            buddy = mesh.get_buddy(event.handle)
-            # print "Message from %s / %s: %s" % (buddy.props.nick,
-            # event.handle, event.content)
+            log.debug('mesh.MESSAGE_UNI or mesh.MESSAGE_MULTI')
             if event.handle == mesh.my_handle():
                 # ignore messages from ourself
                 pass
@@ -294,10 +299,10 @@ class MazeGame:
                 try:
                     self.handleMessage(player, event.content)
                 except:
-                    print "Error handling message: %s\n%s" % \
-                    (event, sys.exc_info())
+                    log.debug("Error handling message: %s\n%s",
+                                  event, sys.exc_info())
             else:
-                print "Message from unknown buddy?"
+                log.debug("Message from unknown buddy?")
 
         elif event.type == pygame.USEREVENT:
             # process our buttons
@@ -355,14 +360,26 @@ class MazeGame:
             finish: nick, elapsed
                 A player has finished the maze
         """
+        log.debug('mesh message: %s', message)
+
         # ignore messages from myself
         if player in self.localplayers:
             return
         if message.startswith("move:"):
             # a player has moved
             nick, x, y, dx, dy = message[5:].split(",")[:5]
-            player = player.bonusPlayer(nick)
+
+            # README: this function (player.bonusPlayer) sometimes
+            # returns None and the activity doesn't move the players.
+            # This is because the name sent to the server is the
+            # child's name but it returns something like this:
+            #  * 6be01ff2bcfaa58eeacc7f10a57b77b65470d413@jabber.sugarlabs.org
+            # So, we have set remote users with this kind of name but
+            # we receive the reald child's name in the mesh message
+
+            # player = player.bonusPlayer(nick)
             player.hidden = False
+
             self.markPointDirty(player.position)
             player.position = (int(x), int(y))
             player.direction = (int(dx), int(dy))
@@ -389,8 +406,7 @@ class MazeGame:
             self.markPointDirty(player.position)
         else:
             # it was something I don't recognize...
-            print "Message from %s: %s" % (player.nick, message)
-            pass
+            log.debug("Message from %s: %s", player.nick, message)
 
     def arrowKeysPressed(self):
         keys = pygame.key.get_pressed()
