@@ -8,17 +8,17 @@
 #
 # Copyright (C) 2007  Joshua Minor
 # This file is part of Maze.activity
-# 
+#
 #     Maze.activity is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
 #     the Free Software Foundation, either version 3 of the License, or
 #     (at your option) any later version.
-# 
+#
 #     Maze.activity is distributed in the hope that it will be useful,
 #     but WITHOUT ANY WARRANTY; without even the implied warranty of
 #     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #     GNU General Public License for more details.
-# 
+#
 #     You should have received a copy of the GNU General Public License
 #     along with Maze.activity.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -29,14 +29,16 @@ from sugar.graphics.xocolor import XoColor
 import pygame
 import re
 import os
+import unicodedata
 
 
 class Player:
     def __init__(self, buddy, shape='circle'):
         self.buddy = buddy
-        self.nick = buddy.props.nick.decode("utf-8")
+        name = buddy.props.nick.decode('utf-8')
+        self.nick = unicodedata.normalize('NFC',name)
         colors = buddy.props.color.split(",")
-        
+
         def string2Color(str):
             return (int(str[1:3], 16), int(str[3:5], 16), int(str[5:7], 16))
         self.colors = map(string2Color, colors)
@@ -70,7 +72,7 @@ class Player:
         self.position = (1, 1)
         self.previous = (1, 1)
         self.elapsed = None
-    
+
     def animate(self, maze):
         # if the player finished the maze, then don't move
         if maze.map[self.position[0]][self.position[1]] == maze.GOAL:
@@ -83,7 +85,7 @@ class Player:
         else:
             self.direction = (0, 0)
         return self.position
-    
+
     def move(self, direction, maze):
         """Move the player in a given direction (deltax,deltay)"""
         newposition = (self.position[0] + direction[0], self.position[1] + direction[1])
@@ -111,7 +113,7 @@ class Player:
                 directions.remove(d)
         # is there only one possible direction?
         if len(directions) == 1:
-       	    self.direction = directions[0]
+            self.direction = directions[0]
         else:
             self.direction = (0, 0)
 
