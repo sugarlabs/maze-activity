@@ -22,14 +22,11 @@
 #     You should have received a copy of the GNU General Public License
 #     along with Maze.activity.  If not, see <http://www.gnu.org/licenses/>.
 
+import pygame
+import unicodedata
+
 from olpcgames.util import get_bundle_path
 bundlepath = get_bundle_path()
-from sugar.graphics.icon import Icon
-from sugar.graphics.xocolor import XoColor
-import pygame
-import re
-import os
-import unicodedata
 
 
 class Player:
@@ -38,6 +35,11 @@ class Player:
         name = buddy.props.nick.decode('utf-8')
         self.nick = unicodedata.normalize('NFC', name)
         colors = buddy.props.color.split(",")
+
+        # this field is None when the activity is not shared and when
+        # the user shared it this field will become to
+        # "olpcgames.mesh.my_handle()"
+        self.uid = None
 
         def string2Color(str):
             return (int(str[1:3], 16), int(str[3:5], 16), int(str[5:7], 16))
@@ -123,17 +125,19 @@ class Player:
             self.bonusplayers.append(Player(self.buddy, 'square'))
             self.bonusplayers.append(Player(self.buddy, 'triangle'))
 
-            count = 2
+            count = 1
             for player in self.bonusplayers:
                 player.nick = self.nick + "-%d" % count
+                if self.uid is not None:
+                    player.uid = self.uid + "-%d" % count
                 player.hidden = True
                 count += 1
 
         return self.bonusplayers
 
-    def bonusPlayer(self, nick):
-        if nick == self.nick:
+    def bonusPlayer(self, uid):
+        if uid == self.uid:
             return self
         for bonusplayer in self.bonusPlayers():
-            if bonusplayer.nick == nick:
+            if bonusplayer.uid == uid:
                 return bonusplayer

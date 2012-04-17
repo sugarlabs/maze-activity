@@ -33,7 +33,9 @@ import pygame
 import olpcgames
 
 import logging
+logging.basicConfig()
 log = logging.getLogger('Maze')
+log.setLevel(logging.DEBUG)
 
 import olpcgames.pausescreen as pausescreen
 import olpcgames.mesh as mesh
@@ -195,7 +197,7 @@ class MazeGame:
 
                 if len(self.remoteplayers) > 0:
                     mesh.broadcast("move:%s,%d,%d,%d,%d" % \
-                                   (player.nick,
+                                   (player.uid,
                                     player.position[0],
                                     player.position[1],
                                     player.direction[0],
@@ -245,6 +247,7 @@ class MazeGame:
 
         elif event.type == mesh.CONNECT:
             log.debug("Connected to the mesh")
+
         elif event.type == mesh.PARTICIPANT_ADD:
             log.debug('mesh.PARTICIPANT_ADD')
 
@@ -252,10 +255,19 @@ class MazeGame:
                 if event.handle == mesh.my_handle():
                     log.debug("Me: %s - %s", buddy.props.nick,
                                   buddy.props.color)
+                    # README: this is a workaround to use an unique
+                    # identifier instead the nick of the buddy
+                    # http://dev.laptop.org/ticket/10750
+                    count = ''
+                    for i, player in enumerate(self.localplayers):
+                        if i > 0:
+                            count = '-%d' % i
+                        player.uid = mesh.my_handle() + count
                 else:
                     log.debug("Join: %s - %s", buddy.props.nick,
                                   buddy.props.color)
                     player = Player(buddy)
+                    player.uid = event.handle
                     self.remoteplayers[event.handle] = player
                     self.allplayers.append(player)
                     self.allplayers.extend(player.bonusPlayers())
@@ -269,8 +281,9 @@ class MazeGame:
                                   self.maze.width, self.maze.height))
                     for player in self.localplayers:
                         if not player.hidden:
-                            mesh.send_to(event.handle, "move:%s,%d,%d,%d,%d" % \
-                                         (player.nick,
+                            mesh.send_to(event.handle,
+                                         "move:%s,%d,%d,%d,%d" % \
+                                         (player.uid,
                                           player.position[0],
                                           player.position[1],
                                           player.direction[0],
@@ -367,7 +380,7 @@ class MazeGame:
             return
         if message.startswith("move:"):
             # a player has moved
-            nick, x, y, dx, dy = message[5:].split(",")[:5]
+            uid, x, y, dx, dy = message[5:].split(",")[:5]
 
             # README: this function (player.bonusPlayer) sometimes
             # returns None and the activity doesn't move the players.
@@ -377,7 +390,7 @@ class MazeGame:
             # So, we have set remote users with this kind of name but
             # we receive the reald child's name in the mesh message
 
-            # player = player.bonusPlayer(nick)
+            player = player.bonusPlayer(uid)
             player.hidden = False
 
             self.markPointDirty(player.position)
@@ -400,8 +413,8 @@ class MazeGame:
                 self.reset()
         elif message.startswith("finish:"):
             # someone finished the maze
-            nick, elapsed = message[7:].split(",")[:2]
-            player = player.bonusPlayer(nick)
+            uid, elapsed = message[7:].split(",")[:2]
+            player = player.bonusPlayer(uid)
             player.elapsed = float(elapsed)
             self.markPointDirty(player.position)
         else:
