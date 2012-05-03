@@ -7,15 +7,29 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-02-01 11:32+0000\n"
+"POT-Creation-Date: 2012-04-11 00:31-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Translate Toolkit 1.7.0\n"
 
-#: activity/activity.info:2
+#: activity/activity.info:2 activity.py:13
 msgid "Maze"
+msgstr ""
+
+#: activity.py:26
+msgid "Harder level"
+msgstr ""
+
+#: activity.py:32
+msgid "Easier level"
+msgstr ""
+
+#: olpcgames/canvas.py:151
+#, python-format
+msgid "%s Source"
 msgstr ""

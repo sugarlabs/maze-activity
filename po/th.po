@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-03-29 00:31-0400\n"
+"POT-Creation-Date: 2012-04-11 00:31-0400\n"
 "PO-Revision-Date: 2012-04-11 11:06+0200\n"
 "Last-Translator: Meechai <malaku38@hotmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,9 +17,17 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Pootle 2.0.5\n"
 
-#: activity/activity.info:2 activity.py:8
+#: activity/activity.info:2 activity.py:13
 msgid "Maze"
 msgstr "เขาวงกต"
+
+#: activity.py:26
+msgid "Harder level"
+msgstr ""
+
+#: activity.py:32
+msgid "Easier level"
+msgstr ""
 
 #: olpcgames/canvas.py:151
 #, python-format
