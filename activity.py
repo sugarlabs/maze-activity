@@ -11,7 +11,7 @@ from gettext import gettext as _
 class MazeActivity(olpcgames.PyGameActivity):
     game_name = 'game'
     game_title = _('Maze')
-    game_size = None    # let olpcgames pick a nice size for us
+    game_size = None    # Let olpcgames pick a nice size for us
 
     def build_toolbar(self):
         """Build our Activity toolbar for the Sugar system."""
