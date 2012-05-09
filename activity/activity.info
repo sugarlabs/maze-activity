@@ -1,11 +1,9 @@
 [Activity]
 name = Maze
-
 exec = sugar-activity activity.MazeActivity
 icon = activity-maze
-activity_version   = 18
+activity_version   = 20
 show_launcher = yes
 host_version = 1
 license = GPLv3+
-
 bundle_id = vu.lux.olpc.Maze
