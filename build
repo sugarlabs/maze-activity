@@ -2,5 +2,6 @@
 
 find Maze.activity/ -name "*.pyc" -exec rm {} \;
 find Maze.activity/ -name ".DS_Store" -exec rm {} \;
-rm dist/Maze.xo
-zip -r dist/Maze.xo Maze.activity && scp dist/Maze.xo luxvu@lux.vu:public_html/olpc/
+cd Maze.activity
+sweets dist_xo
+
