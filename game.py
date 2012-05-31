@@ -175,9 +175,7 @@ class MazeGame:
         if event.type == pygame.QUIT:
             self.running = False
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                self.running = False
-            elif event.key in (pygame.K_PLUS, pygame.K_EQUALS):
+            if event.key in (pygame.K_PLUS, pygame.K_EQUALS):
                 self.harder()
             elif event.key == pygame.K_MINUS:
                 self.easier()
