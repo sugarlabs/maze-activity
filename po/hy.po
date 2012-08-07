@@ -7,15 +7,15 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2012-04-11 00:31-0400\n"
-"PO-Revision-Date: 2011-03-25 17:31+0200\n"
-"Last-Translator: <rubina@aua.am>\n"
+"PO-Revision-Date: 2012-08-01 22:50+0200\n"
+"Last-Translator: anush.mkrtchyan <anush.mkrtchyan@ca1492.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"Language: hy\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Pootle 2.0.1\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Pootle 2.0.5\n"
 
 #: activity/activity.info:2 activity.py:13
 msgid "Maze"
@@ -23,13 +23,13 @@ msgstr "Լաբիրինթոս"
 
 #: activity.py:26
 msgid "Harder level"
-msgstr ""
+msgstr "Ավելի բարդ մակարդակ"
 
 #: activity.py:32
 msgid "Easier level"
-msgstr ""
+msgstr "Ավելի հեշտ մակարդակ"
 
 #: olpcgames/canvas.py:151
 #, python-format
 msgid "%s Source"
-msgstr ""
+msgstr "%s Աղբյուր"
