@@ -30,6 +30,7 @@ msgid "Easier level"
 msgstr ""
 
 #: olpcgames/canvas.py:151
+#, python-format
 #, python-format, fuzzy
 msgid "%s Source"
 msgstr "%sEleltaláb"
