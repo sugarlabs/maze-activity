@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2012-04-11 00:31-0400\n"
-"PO-Revision-Date: 2012-04-15 08:19+0200\n"
+"PO-Revision-Date: 2012-05-19 06:28+0200\n"
 "Last-Translator: Chris <cjl@laptop.org>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: ur\n"
@@ -20,7 +20,7 @@ msgstr ""
 #: activity/activity.info:2 activity.py:13
 #, fuzzy
 msgid "Maze"
-msgstr "بھول بھلياں "
+msgstr "بھول بھلياں"
 
 #: activity.py:26
 msgid "Harder level"
