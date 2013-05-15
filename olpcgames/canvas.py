@@ -84,6 +84,8 @@ class PygameCanvas(gtk.Layout):
         os.environ['SDL_WINDOWID'] = str(self._socket.get_id())
         #print 'Socket ID=%s'%os.environ['SDL_WINDOWID']
         pygame.init()
+        # Maze does not use sound. stop the mixer due to OLPC #12677
+        pygame.mixer.quit()
 
         self._translator.hook_pygame()
         
