@@ -2,7 +2,7 @@
 name = Maze
 exec = sugar-activity activity.MazeActivity
 icon = activity-maze
-activity_version   = 22
+activity_version   = 23
 show_launcher = yes
 host_version = 1
 license = GPLv3+
