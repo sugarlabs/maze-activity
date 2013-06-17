@@ -1,17 +1,33 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" [
-  <!ENTITY fill_color "#FFFFFF">
-  <!ENTITY stroke_color "#010101">
-]>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
 <svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
    version="1.1"
    width="50"
    height="50"
    viewBox="0 0 50 50"
    id="svg2">
+  <metadata
+     id="metadata8">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs6" />
   <path
-     d="m 5,5 0,5 5,0 0,10 0,10 -5,0 0,5 0,5 5,0 0,5 5,0 5,0 0,-5 10,0 0,5 5,0 5,0 0,-5 5,0 0,-5 0,-5 -5,0 -10,0 -10,0 0,-10 10,0 10,0 5,0 0,-5 0,-5 0,-5 -5,0 -5,0 0,5 -5,0 -10,0 0,-5 -5,0 -5,0 -5,0 z"
-     id="rect3770"
-     style="color:#000000;fill:&fill_color;;fill-opacity:1;stroke:none;stroke-width:2;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
+     d="m 22.25607,16.76821 c 0,-3.658573 0,-7.3171469 0,-10.97572 7.317147,0 14.634293,0 21.95144,0 0,5.48786 0,10.97572 0,16.46358 -3.658573,0 -7.317147,0 -10.97572,0 0,-1.829287 0,-3.658573 0,-5.48786 1.829287,0 3.658573,0 5.48786,0 0,-1.829287 0,-3.658573 0,-5.48786 -3.658573,0 -7.317147,0 -10.97572,0 0,3.658573 0,7.317147 0,10.97572 -3.658573,0 -7.317147,0 -10.97572,0 0,3.658573 0,7.317147 0,10.97572 -1.829287,0 -3.658573,0 -5.48786,0 0,1.829287 0,3.658573 0,5.48786 3.658573,0 7.317147,0 10.97572,0 0,-3.658573 0,-7.317147 0,-10.97572 7.317147,0 14.634293,0 21.95144,0 0,5.48786 0,10.97572 0,16.46358 -1.829287,0 -3.658573,0 -5.48786,0 0,-3.658573 0,-7.317147 0,-10.97572 -3.658573,0 -7.317147,0 -10.97572,0 0,1.829287 0,3.658573 0,5.48786 1.829287,0 3.658573,0 5.48786,0 0,1.829287 0,3.658573 0,5.48786 0,0 -23.780727,0 -27.4393,0 0,-5.48786 0,-10.97572 0,-16.46358 1.829286,0 3.658573,0 5.48786,0 0,-5.48786 0,-10.97572 0,-16.46358 -1.829287,0 -3.658574,0 -5.48786,0 0,-1.829287 0,-3.658573 0,-5.4878601 3.658573,0 7.317147,0 10.97572,0 0,3.6585731 0,7.3171471 0,10.9757201 1.829287,0 3.658573,0 5.48786,0 z"
+     id="path3037"
+     style="fill:#ffffff;fill-opacity:1" />
 </svg>
