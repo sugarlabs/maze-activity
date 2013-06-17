@@ -136,7 +136,7 @@ class PygameCanvas(gtk.Layout):
                 eventwrap.clear()
         finally:
             log.info( 'Main function finished, calling main_quit' )
-            gtk.main_quit()
+            # gtk.main_quit()
 
     source_object_id = None
     def view_source(self):

@@ -92,7 +92,12 @@ class MazeActivity(olpcgames.PyGameActivity):
         self.set_toolbar_box(toolbar_box)
         toolbar_box.show_all()
 
+        self.connect("destroy", self.__stop_pygame)
+
         return toolbar_box
+
+    def __stop_pygame(self, widget):
+        pygame.quit()
 
     def _easier_button_cb(self, button):
         pygame.event.post(olpcgames.eventwrap.Event(
