@@ -29,6 +29,8 @@ try:
     import json
 except ImportError:
     import simplejson as json
+import gtk
+
 import pygame
 import olpcgames
 
@@ -41,6 +43,7 @@ import olpcgames.pausescreen as pausescreen
 import olpcgames.mesh as mesh
 from olpcgames.util import get_bundle_path
 from sugar.presence import presenceservice
+from sugar.graphics.style import GRID_CELL_SIZE
 
 bundlepath = get_bundle_path()
 presenceService = presenceservice.get_instance()
@@ -134,6 +137,33 @@ class MazeGame:
             pygame.K_KP7: (2, pygame.K_LEFT),
             pygame.K_KP1: (2, pygame.K_RIGHT)
         }
+
+        gtk.gdk.screen_get_default().connect('size-changed',
+                                             self.__configure_cb)
+
+    def __configure_cb(self, event):
+        ''' Screen size has changed '''
+        width = gtk.gdk.screen_width()
+        height = gtk.gdk.screen_height() - GRID_CELL_SIZE
+        self.aspectRatio = width / float(height)
+        pygame.display.set_mode((width, height), pygame.RESIZABLE)
+
+        seed = self.maze.seed
+        if width < height:
+            if self.maze.width < self.maze.height:
+                self.maze = Maze(self.maze.seed, self.maze.width,
+                                 self.maze.height)
+            else:
+                self.maze = Maze(self.maze.seed, self.maze.height,
+                                 self.maze.width)
+        else:
+            if self.maze.width > self.maze.height:
+                self.maze = Maze(self.maze.seed, self.maze.width,
+                                 self.maze.height)
+            else:
+                self.maze = Maze(self.maze.seed, self.maze.height,
+                                 self.maze.width)
+        self.reset()
 
     def game_running_time(self, newelapsed=None):
         return int(time.time() - self.game_start_time)
@@ -435,6 +465,7 @@ class MazeGame:
 
         while self.running:
             clock.tick(25)
+
             a, b, c, d = pygame.cursors.load_xbm('my_cursor.xbm',
                                                  'my_cursor_mask.xbm')
             pygame.mouse.set_cursor(a, b, c, d)
