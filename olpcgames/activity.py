@@ -163,7 +163,8 @@ class PygameActivity(activity.Activity):
             self.game_handler or self.game_name
         )
         if self.pygame_mode != 'Cairo':
-            self._pgc = self.PYGAME_CANVAS_CLASS(*self.game_size)
+            size = max(gtk.gdk.screen_width(), gtk.gdk.screen_height())
+            self._pgc = self.PYGAME_CANVAS_CLASS(*(size, size))
             self.set_canvas(self._pgc)
             self._pgc.grab_focus()
             self._pgc.connect_game(self.game_handler or self.game_name)
