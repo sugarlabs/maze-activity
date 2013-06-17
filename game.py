@@ -25,10 +25,7 @@
 
 import sys
 import time
-try:
-    import json
-except ImportError:
-    import simplejson as json
+import json
 import gtk
 
 import pygame
