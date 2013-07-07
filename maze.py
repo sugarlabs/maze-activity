@@ -23,7 +23,7 @@
 #     along with Maze.activity.  If not, see <http://www.gnu.org/licenses/>.
 
 import random
-from pygame import Rect
+import gtk
 
 class Maze:
     SOLID = 0
@@ -40,7 +40,7 @@ class Maze:
         self.generator = random.Random(seed)
         self.width, self.height = width, height
         self.map = []
-        self.bounds = Rect(0,0,width,height)
+        self.bounds = gtk.gdk.Rectangle(0, 0, width, height)
 
         for x in range(0, width):
             self.map.append([self.SOLID] * self.height)
@@ -49,11 +49,21 @@ class Maze:
         starty = self.generator.randrange(1,height,2)
         self.dig(startx,starty)
 
+    def _check_point_in_rectangle(self, rectangle, x, y):
+        if x < rectangle.x or y < rectangle.y:
+            return False
+        if x > rectangle.x + rectangle.width or \
+            y > rectangle.y + rectangle.height:
+            return False
+        return True
+
     def validMove(self, x, y):
-        return self.bounds.collidepoint(x,y) and self.map[x][y]!=self.SOLID
+        return self._check_point_in_rectangle(self.bounds, x, y) and \
+            self.map[x][y] != self.SOLID
 
     def validDig(self, x, y):
-        return self.bounds.collidepoint(x,y) and self.map[x][y]==self.SOLID
+        return self._check_point_in_rectangle(self.bounds, x, y) and \
+            self.map[x][y] == self.SOLID
   
     def validDigDirections(self, x, y):
         directions = []
