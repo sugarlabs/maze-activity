@@ -22,12 +22,11 @@
 #     You should have received a copy of the GNU General Public License
 #     along with Maze.activity.  If not, see <http://www.gnu.org/licenses/>.
 
-import pygame
+import math
+import gtk
 import unicodedata
 
-from olpcgames.util import get_bundle_path
-bundlepath = get_bundle_path()
-
+from sugar.graphics import style
 
 class Player:
     def __init__(self, buddy, shape='circle'):
@@ -35,39 +34,42 @@ class Player:
         name = buddy.props.nick.decode('utf-8')
         self.nick = unicodedata.normalize('NFC', name)
         colors = buddy.props.color.split(",")
+        self.fg = style.Color(colors[0])
+        self.bg = style.Color(colors[1])
 
         # this field is None when the activity is not shared and when
         # the user shared it this field will become to
         # "olpcgames.mesh.my_handle()"
         self.uid = None
 
-        def string2Color(str):
-            return (int(str[1:3], 16), int(str[3:5], 16), int(str[5:7], 16))
-        self.colors = map(string2Color, colors)
         self.shape = shape
         self.hidden = False
         self.bonusplayers = None
         self.reset()
 
-    def draw(self, screen, bounds, size):
-        rect = pygame.Rect(bounds.x + self.position[0] * size, bounds.y + self.position[1] * size, size, size)
-        border = size / 10.
-        center = rect.inflate(-border * 2, - border * 2)
-        fg, bg = self.colors
+    def draw(self, context, bounds, size):
+        rect = gtk.gdk.Rectangle(bounds.x + self.position[0] * size,
+                                 bounds.y + self.position[1] * size, size,
+                                 size)
+        context.save()
         if self.shape == 'circle':
-            pygame.draw.ellipse(screen, fg, rect, 0)
-            pygame.draw.ellipse(screen, bg, center, 0)
+            context.arc(rect.x + size / 2, rect.y + size / 2, size, 0,
+                        2 * math.pi)
         elif self.shape == 'square':
-            pygame.draw.rect(screen, fg, rect, 0)
-            pygame.draw.rect(screen, bg, center, 0)
+            context.rectangle(rect.x, rect.y, size, size)
         elif self.shape == 'triangle':
-            rect = rect.inflate(-1, -1)
-            pts = [rect.bottomleft, rect.midtop, rect.bottomright]
-            pygame.draw.polygon(screen, fg, pts, 0)
-            pts = [(pts[0][0] + border * 1.394, pts[0][1] - border),
-                   (pts[1][0],              pts[1][1] + border * 2.236),
-                   (pts[2][0] - border * 1.394, pts[2][1] - border)]
-            pygame.draw.polygon(screen, bg, pts, 0)
+            context.new_path()
+            context.move_to(rect.x, rect.y + size)
+            context.line_to(rect.x + size / 2, rect.y)
+            context.line_to(rect.x + size, rect.y + size)
+            context.close_path()
+
+        context.set_source_rgba(*self.bg.get_rgba())
+        context.set_line_width(size / 10.)
+        context.fill_preserve()
+        context.set_source_rgba(*self.fg.get_rgba())
+        context.stroke()
+        context.restore()
 
     def reset(self):
         self.direction = (0, 0)
@@ -90,25 +92,31 @@ class Player:
 
     def move(self, direction, maze):
         """Move the player in a given direction (deltax,deltay)"""
-        newposition = (self.position[0] + direction[0], self.position[1] + direction[1])
+        newposition = (self.position[0] + direction[0],
+                       self.position[1] + direction[1])
         self.previous = self.position
         self.position = newposition
 
     def canGo(self, direction, maze):
-        """Can the player go in this direction without bumping into somethi ng?"""
-        newposition = (self.position[0] + direction[0], self.position[1] + direction[1])
+        """Can the player go in this direction without bumping into
+           something?
+        """
+        newposition = (self.position[0] + direction[0],
+                       self.position[1] + direction[1])
         return maze.validMove(newposition[0], newposition[1])
 
     def cameFrom(self, direction):
         """Note the position/direction that we just came from."""
-        return self.previous == (self.position[0] + direction[0], self.position[1] + direction[1])
+        return self.previous == (self.position[0] + direction[0],
+                                 self.position[1] + direction[1])
 
     def keepGoing(self, curdir, maze):
         """Try to keep going if the direction is obvious.
         This prevents the player from having to use the arrows to navigate
         every single twist and turn of large mazes."""
         # possible directions are fwd, turn left, turn right
-        directions = [curdir, (curdir[1], curdir[0]), (- curdir[1], - curdir[0])]
+        directions = [curdir, (curdir[1], curdir[0]),
+                      (- curdir[1], - curdir[0])]
         # remove any that are blocked
         for d in list(directions):
             if not self.canGo(d, maze):
