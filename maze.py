@@ -23,7 +23,19 @@
 #     along with Maze.activity.  If not, see <http://www.gnu.org/licenses/>.
 
 import random
-import gtk
+import logging
+
+
+class Rectangle:
+
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+
+    def get_bounds(self):
+        return (self.x, self.y, self.width, self.height)
 
 
 class Maze:
@@ -36,12 +48,13 @@ class Maze:
         # use the seed given to us to make a pseudo-random number generator
         # we will use that to generate the maze, so that other players can
         # generate the exact same maze given the same seed.
-        print "Generating maze:%d,%d,%d" % (seed, width, height)
+        logging.debug("Generating maze: seed %d, width %d, height %d", seed,
+                      width, height)
         self.seed = seed
         self.generator = random.Random(seed)
         self.width, self.height = width, height
         self.map = []
-        self.bounds = gtk.gdk.Rectangle(0, 0, width, height)
+        self.bounds = Rectangle(0, 0, width, height)
 
         for x in range(0, width):
             self.map.append([self.SOLID] * self.height)
@@ -49,12 +62,14 @@ class Maze:
         startx = self.generator.randrange(1, width, 2)
         starty = self.generator.randrange(1, height, 2)
         self.dig(startx, starty)
+        for row in self.map:
+            logging.error(row)
 
     def _check_point_in_rectangle(self, rectangle, x, y):
         if x < rectangle.x or y < rectangle.y:
             return False
-        if x > rectangle.x + rectangle.width or \
-                y > rectangle.y + rectangle.height:
+        if x >= rectangle.x + rectangle.width or \
+                y >= rectangle.y + rectangle.height:
             return False
         return True
 
@@ -77,11 +92,6 @@ class Maze:
         if self.validDig(x - 2, y):
             directions.append((-1, 0))
         return directions
-
-    def fill(self, color):
-        for y in range(0, height):
-            for x in range(0, width):
-                self.map[x][y] = color
 
     def digRecursively(self, x, y):
         """This works great, except for python's lame limit on
