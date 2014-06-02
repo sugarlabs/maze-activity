@@ -23,10 +23,12 @@
 #     along with Maze.activity.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
-import gtk
 import unicodedata
 
-from sugar.graphics import style
+from sugar3.graphics import style
+
+from maze import Rectangle
+
 
 class Player:
     def __init__(self, buddy, shape='circle'):
@@ -47,29 +49,31 @@ class Player:
         self.bonusplayers = None
         self.reset()
 
-    def draw(self, context, bounds, size):
-        rect = gtk.gdk.Rectangle(bounds.x + self.position[0] * size,
-                                 bounds.y + self.position[1] * size, size,
-                                 size)
-        context.save()
+    def draw(self, ctx, bounds, size):
+        line_width = size / 10.
+        rect = Rectangle(bounds.x + self.position[0] * size,
+                         bounds.y + self.position[1] * size, size,
+                         size)
+        ctx.save()
         if self.shape == 'circle':
-            context.arc(rect.x + size / 2, rect.y + size / 2, size, 0,
-                        2 * math.pi)
+            ctx.arc(rect.x + size / 2, rect.y + size / 2,
+                    (size / 2 - line_width), 0, 2 * math.pi)
         elif self.shape == 'square':
-            context.rectangle(rect.x, rect.y, size, size)
+            ctx.rectangle(rect.x + line_width, rect.y + line_width,
+                          size - line_width * 2, size - line_width * 2)
         elif self.shape == 'triangle':
-            context.new_path()
-            context.move_to(rect.x, rect.y + size)
-            context.line_to(rect.x + size / 2, rect.y)
-            context.line_to(rect.x + size, rect.y + size)
-            context.close_path()
+            ctx.new_path()
+            ctx.move_to(rect.x, rect.y + size)
+            ctx.line_to(rect.x + size / 2, rect.y)
+            ctx.line_to(rect.x + size, rect.y + size)
+            ctx.close_path()
 
-        context.set_source_rgba(*self.bg.get_rgba())
-        context.set_line_width(size / 10.)
-        context.fill_preserve()
-        context.set_source_rgba(*self.fg.get_rgba())
-        context.stroke()
-        context.restore()
+        ctx.set_source_rgba(*self.bg.get_rgba())
+        ctx.set_line_width(line_width)
+        ctx.fill_preserve()
+        ctx.set_source_rgba(*self.fg.get_rgba())
+        ctx.stroke()
+        ctx.restore()
 
     def reset(self):
         self.direction = (0, 0)

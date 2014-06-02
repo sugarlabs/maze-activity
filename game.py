@@ -26,43 +26,34 @@
 import sys
 import time
 import json
-import gtk
+from math import pi
+from gi.repository import Gdk
+from gi.repository import Gtk
 
 import logging
 
-from sugar.presence import presenceservice
-from sugar.graphics.style import GRID_CELL_SIZE
+from sugar3.presence import presenceservice
+from sugar3.graphics.style import GRID_CELL_SIZE
 
 presenceService = presenceservice.get_instance()
 
-from maze import Maze
+from maze import Maze, Rectangle
 from player import Player
 
 
-class MazeGame:
+class MazeGame(Gtk.DrawingArea):
     """Maze game controller.
     This class handles all of the game logic, event loop, mulitplayer, etc."""
 
     # Munsell color values http://wiki.laptop.org/go/Munsell
-    N10 = (255, 255, 255)
-    N9p5 = (243, 243, 243)
-    N9 = (232, 232, 232)
-    N8 = (203, 203, 203)
-    N7 = (179, 179, 179)
-    N6 = (150, 150, 150)
-    N5 = (124, 124, 124)
-    N4 = (97, 97,  97)
-    N3 = (70, 70,  70)
-    N2 = (48, 48,  48)
-    N1 = (28, 28,  28)
-    N0 = (0, 0, 0)
-    EMPTY_COLOR = N8
-    SOLID_COLOR = N1
-    TRAIL_COLOR = N10
+    EMPTY_COLOR = (203.0 / 255.0, 203.0 / 255.0, 203.0 / 255.0)
+    SOLID_COLOR = (28.0 / 255.0, 28.0 / 255.0,  28.0 / 255.0)
+    TRAIL_COLOR = (1.0, 1.0, 1.0)
     GOAL_COLOR = (0x00, 0xff, 0x00)
     WIN_COLOR = (0xff, 0xff, 0x00)
 
-    def __init__(self, screen):
+    def __init__(self):
+        super(MazeGame, self).__init__()
         # note what time it was when we first launched
         self.game_start_time = time.time()
 
@@ -81,9 +72,8 @@ class MazeGame:
         # keep a list of all players, local and remote,
         self.allplayers = [] + self.localplayers
 
-        self.screen = screen
-        canvas_size = screen.get_size()
-        self.aspectRatio = canvas_size[0] / float(canvas_size[1])
+        screen = Gdk.Screen.get_default()
+        self.aspectRatio = float(screen.width()) / screen.height()
 
         # start with a small maze using a seed that will be different
         # each time you play
@@ -91,16 +81,18 @@ class MazeGame:
                 'width': int(9 * self.aspectRatio),
                 'height': 9}
 
-        log.debug('Starting the game with: %s', data)
+        logging.debug('Starting the game with: %s', data)
         self.maze = Maze(**data)
         self.reset()
 
         self.frame = 0
 
-        self.font = pygame.font.Font(None, 30)
+        # self.font = pygame.font.Font(None, 30)
 
         # support arrow keys, game pad arrows and game pad buttons
         # each set maps to a local player index and a direction
+        # TODO
+        """
         self.arrowkeys = {
             # real key:     (localplayer index, ideal key)
             pygame.K_UP: (0, pygame.K_UP),
@@ -116,18 +108,17 @@ class MazeGame:
             pygame.K_KP7: (2, pygame.K_LEFT),
             pygame.K_KP1: (2, pygame.K_RIGHT)
         }
-
-        gtk.gdk.screen_get_default().connect('size-changed',
-                                             self.__configure_cb)
+        """
+        Gdk.Screen.get_default().connect('size-changed',
+                                         self.__configure_cb)
+        self.connect('draw', self.__draw_cb)
 
     def __configure_cb(self, event):
         ''' Screen size has changed '''
-        width = gtk.gdk.screen_width()
-        height = gtk.gdk.screen_height() - GRID_CELL_SIZE
-        self.aspectRatio = width / float(height)
-        pygame.display.set_mode((width, height), pygame.RESIZABLE)
+        width = Gdk.Screen.get_default().width()
+        height = Gdk.Screen.get_default().height() - GRID_CELL_SIZE
+        self.aspectRatio = width / height
 
-        seed = self.maze.seed
         if width < height:
             if self.maze.width < self.maze.height:
                 self.maze = Maze(self.maze.seed, self.maze.width,
@@ -155,15 +146,115 @@ class MazeGame:
         self.finish_time = None
         for player in self.allplayers:
             player.reset()
-        self.dirtyRect = None
+        self.dirtyRect = self.maze.bounds
         self.dirtyPoints = []
         self.maze.map[self.maze.width - 2][self.maze.height - 2] = \
-                                        self.maze.GOAL
+            self.maze.GOAL
 
         # clear and mark the whole screen as dirty
-        self.screen.fill((0, 0, 0))
-        self.markRectDirty(pygame.Rect(0, 0, 99999, 99999))
+        # TODO
+        # self.screen.fill((0, 0, 0))
+        self.queue_draw()
         self.mouse_in_use = 0
+
+    def __draw_cb(self, widget, ctx):
+        """Draw the current state of the game.
+        This makes use of the dirty rectangle to reduce CPU load."""
+        # TODO
+        # if self.dirtyRect is None and len(self.dirtyPoints) == 0:
+        #    return
+
+        # compute the size of the tiles given the screen size, etc.
+        allocation = self.get_allocation()
+
+        ctx.rectangle(0, 0, allocation.width, allocation.height)
+        ctx.set_source_rgb(*self.SOLID_COLOR)
+        ctx.fill()
+
+        self.tileSize = min(allocation.width / self.maze.width,
+                            allocation.height / self.maze.height)
+        self.bounds = Rectangle((allocation.width - self.tileSize *
+                                 self.maze.width) / 2,
+                                (allocation.height - self.tileSize *
+                                 self.maze.height) / 2,
+                                self.tileSize * self.maze.width,
+                                self.tileSize * self.maze.height)
+        self.outline = int(self.tileSize / 5)
+
+        def drawPoint(x, y):
+            # logging.error('drawing %s %s = %s', x, y, self.maze.map[x][y])
+            rect = Rectangle(self.bounds.x + x * self.tileSize,
+                             self.bounds.y + y * self.tileSize,
+                             self.tileSize, self.tileSize)
+            tile = self.maze.map[x][y]
+            background_color = (0xff, 0x00, 0xff)
+            if tile == self.maze.EMPTY:
+                background_color = self.EMPTY_COLOR
+            elif tile == self.maze.SOLID:
+                background_color = self.SOLID_COLOR
+            elif tile == self.maze.GOAL:
+                background_color = self.GOAL_COLOR
+            ctx.save()
+            ctx.set_source_rgb(*background_color)
+            ctx.rectangle(*rect.get_bounds())
+            logging.error('drawing %s %s', rect.get_bounds(), background_color)
+            ctx.fill()
+
+            if tile == self.maze.SEEN:
+                ctx.set_source_rgb(*self.TRAIL_COLOR)
+                radius = self.tileSize / 2 - self.outline
+                ctx.arc(rect.x + radius, rect.y + radius, radius, 0, 2 * pi)
+                ctx.fill()
+            ctx.restore()
+
+        # re-draw the dirty rectangle
+        if self.dirtyRect is not None:
+            # compute the area that needs to be redrawn
+            left = max(0, self.dirtyRect.x)
+            right = min(self.maze.width,
+                        self.dirtyRect.x + self.dirtyRect.width)
+            top = max(0, self.dirtyRect.y)
+            bottom = min(self.maze.height,
+                         self.dirtyRect.y + self.dirtyRect.height)
+
+            # loop over the dirty rect and draw
+            for x in range(left, right):
+                for y in range(top, bottom):
+                    drawPoint(x, y)
+
+        # re-draw the dirty points
+        # for x, y in self.dirtyPoints:
+        #    drawPoint(x, y)
+
+        # draw all players
+        for player in self.allplayers:
+            if not player.hidden:
+                player.draw(ctx, self.bounds, self.tileSize)
+
+        # draw the elapsed time for each player that has finished
+        # TODO
+        """
+        finishedPlayers = filter(lambda p: p.elapsed is not None,
+                                 self.allplayers)
+        finishedPlayers.sort(lambda a, b: cmp(a.elapsed, b.elapsed))
+        y = 0
+        for player in finishedPlayers:
+            fg, bg = player.colors
+            text = "%3.2f - %s" % (player.elapsed, player.nick)
+            textimg = self.font.render(text, 1, fg)
+            textwidth, textheight = self.font.size(text)
+            rect = pygame.Rect(8, y + 4, textwidth, textheight)
+            bigrect = rect.inflate(16, 8)
+            pygame.draw.rect(self.screen, bg, bigrect, 0)
+            pygame.draw.rect(self.screen, fg, bigrect, 2)
+            self.screen.blit(textimg, rect)
+
+            y += bigrect.height + 4
+        """
+        # clear the dirty rect so nothing will be drawn until there is a change
+        # TODO
+        # self.dirtyRect = None
+        # self.dirtyPoints = []
 
     def markRectDirty(self, rect):
         """Mark an area that needs to be redrawn.  This lets us
@@ -203,7 +294,7 @@ class MazeGame:
                     player.direction = (1, 0)
 
                 if len(self.remoteplayers) > 0:
-                    mesh.broadcast("move:%s,%d,%d,%d,%d" % \
+                    mesh.broadcast("move:%s,%d,%d,%d,%d" %
                                    (player.uid,
                                     player.position[0],
                                     player.position[1],
@@ -224,7 +315,7 @@ class MazeGame:
                                   new_mouse_pos[1] - self.prev_mouse_pos[1])
 
                 if ((abs(mouse_movement[0]) > 10) or
-                    (abs(mouse_movement[1]) > 10)):
+                        (abs(mouse_movement[1]) > 10)):
                     player = self.localplayers[0]
                     player.hidden = False
                     # x movement larger
@@ -243,7 +334,7 @@ class MazeGame:
                             player.direction = (0, 1)
 
                     if len(self.remoteplayers) > 0:
-                        mesh.broadcast("move:%s,%d,%d,%d,%d" % \
+                        mesh.broadcast("move:%s,%d,%d,%d,%d" %
                                        (player.nick,
                                         player.position[0],
                                         player.position[1],
@@ -253,14 +344,14 @@ class MazeGame:
             self.mouse_in_use = 0
 
         elif event.type == mesh.CONNECT:
-            log.debug("Connected to the mesh")
+            logging.debug("Connected to the mesh")
 
         elif event.type == mesh.PARTICIPANT_ADD:
-            log.debug('mesh.PARTICIPANT_ADD')
+            logging.debug('mesh.PARTICIPANT_ADD')
 
             def withBuddy(buddy):
                 if event.handle == mesh.my_handle():
-                    log.debug("Me: %s - %s", buddy.props.nick,
+                    logging.debug("Me: %s - %s", buddy.props.nick,
                                   buddy.props.color)
                     # README: this is a workaround to use an unique
                     # identifier instead the nick of the buddy
@@ -271,7 +362,7 @@ class MazeGame:
                             count = '-%d' % i
                         player.uid = mesh.my_handle() + count
                 else:
-                    log.debug("Join: %s - %s", buddy.props.nick,
+                    logging.debug("Join: %s - %s", buddy.props.nick,
                                   buddy.props.color)
                     player = Player(buddy)
                     player.uid = event.handle
@@ -282,14 +373,14 @@ class MazeGame:
                     # send a test message to the new player
                     mesh.broadcast("Welcome %s" % player.nick)
                     # tell them which maze we are playing, so they can sync up
-                    mesh.send_to(event.handle, "maze:%d,%d,%d,%d" % \
+                    mesh.send_to(event.handle, "maze:%d,%d,%d,%d" %
                                  (self.game_running_time(),
                                   self.maze.seed,
                                   self.maze.width, self.maze.height))
                     for player in self.localplayers:
                         if not player.hidden:
                             mesh.send_to(event.handle,
-                                         "move:%s,%d,%d,%d,%d" % \
+                                         "move:%s,%d,%d,%d,%d" %
                                          (player.uid,
                                           player.position[0],
                                           player.position[1],
@@ -298,10 +389,10 @@ class MazeGame:
 
             mesh.lookup_buddy(event.handle, callback=withBuddy)
         elif event.type == mesh.PARTICIPANT_REMOVE:
-            log.debug('mesh.PARTICIPANT_REMOVE')
+            logging.debug('mesh.PARTICIPANT_REMOVE')
             if event.handle in self.remoteplayers:
                 player = self.remoteplayers[event.handle]
-                log.debug("Leave: %s", player.nick)
+                logging.debug("Leave: %s", player.nick)
                 self.markPointDirty(player.position)
                 self.allplayers.remove(player)
                 for bonusplayer in player.bonusPlayers():
@@ -309,8 +400,8 @@ class MazeGame:
                     self.allplayers.remove(bonusplayer)
                 del self.remoteplayers[event.handle]
         elif event.type == mesh.MESSAGE_UNI or \
-             event.type == mesh.MESSAGE_MULTI:
-            log.debug('mesh.MESSAGE_UNI or mesh.MESSAGE_MULTI')
+                event.type == mesh.MESSAGE_MULTI:
+            logging.debug('mesh.MESSAGE_UNI or mesh.MESSAGE_MULTI')
             if event.handle == mesh.my_handle():
                 # ignore messages from ourself
                 pass
@@ -319,10 +410,10 @@ class MazeGame:
                 try:
                     self.handleMessage(player, event.content)
                 except:
-                    log.debug("Error handling message: %s\n%s",
+                    logging.debug("Error handling message: %s\n%s",
                                   event, sys.exc_info())
             else:
-                log.debug("Message from unknown buddy?")
+                logging.debug("Message from unknown buddy?")
 
         elif event.type == pygame.USEREVENT:
             # process our buttons
@@ -332,29 +423,28 @@ class MazeGame:
                 self.easier()
             # process file save / restore events
             elif event.code == olpcgames.FILE_READ_REQUEST:
-                log.debug('Loading the state of the game...')
+                logging.debug('Loading the state of the game...')
                 state = json.loads(event.metadata['state'])
-                log.debug('Loaded data: %s', state)
+                logging.debug('Loaded data: %s', state)
                 self.maze = Maze(**state)
                 self.reset()
                 return True
             elif event.code == olpcgames.FILE_WRITE_REQUEST:
-                log.debug('Saving the state of the game...')
+                logging.debug('Saving the state of the game...')
                 data = {'seed': self.maze.seed,
                         'width': self.maze.width,
-                        'height': self.maze.height,
-                    }
-                log.debug('Saving data: %s', data)
+                        'height': self.maze.height, }
+                logging.debug('Saving data: %s', data)
                 event.metadata['state'] = json.dumps(data)
                 f = open(event.filename, 'w')
                 try:
                     f.write(str(time.time()))
                 finally:
                     f.close()
-                log.debug('Done saving.')
+                logging.debug('Done saving.')
                 return True
         else:
-            log.debug('Unknown event: %r', event)
+            logging.debug('Unknown event: %r', event)
 
     def handleMessage(self, player, message):
         """Handle a message from a player on the mesh.
@@ -380,7 +470,7 @@ class MazeGame:
             finish: nick, elapsed
                 A player has finished the maze
         """
-        log.debug('mesh message: %s', message)
+        logging.debug('mesh message: %s', message)
 
         # ignore messages from myself
         if player in self.localplayers:
@@ -426,7 +516,7 @@ class MazeGame:
             self.markPointDirty(player.position)
         else:
             # it was something I don't recognize...
-            log.debug("Message from %s: %s", player.nick, message)
+            logging.debug("Message from %s: %s", player.nick, message)
 
     def arrowKeysPressed(self):
         keys = pygame.key.get_pressed()
@@ -474,7 +564,7 @@ class MazeGame:
         if len(self.remoteplayers) > 0:
             # but fudge it a little so that we can be sure they'll use our maze
             self.game_start_time -= 10
-            mesh.broadcast("maze:%d,%d,%d,%d" % \
+            mesh.broadcast("maze:%d,%d,%d,%d" %
                            (self.game_running_time(), self.maze.seed,
                             self.maze.width, self.maze.height))
 
@@ -491,7 +581,7 @@ class MazeGame:
         if len(self.remoteplayers) > 0:
             # but fudge it a little so that we can be sure they'll use our maze
             self.game_start_time -= 10
-            mesh.broadcast("maze:%d,%d,%d,%d" % \
+            mesh.broadcast("maze:%d,%d,%d,%d" %
                            (self.game_running_time(), self.maze.seed,
                             self.maze.width, self.maze.height))
 
@@ -506,9 +596,9 @@ class MazeGame:
                 self.markPointDirty(newposition)
                 if player in self.localplayers:
                     self.maze.map[player.previous[0]][player.previous[1]] = \
-                                                                self.maze.SEEN
+                        self.maze.SEEN
                     if self.maze.map[newposition[0]][newposition[1]] == \
-                       self.maze.GOAL:
+                            self.maze.GOAL:
                         self.finish(player)
 
         finish_delay = min(2 * len(self.allplayers), 6)
@@ -522,91 +612,11 @@ class MazeGame:
         if len(self.remoteplayers) > 0:
             mesh.broadcast("finish:%s,%.2f" % (player.nick, player.elapsed))
 
-    def draw(self):
-        """Draw the current state of the game.
-        This makes use of the dirty rectangle to reduce CPU load."""
-        if self.dirtyRect is None and len(self.dirtyPoints) == 0:
-            return
-
-        # compute the size of the tiles given the screen size, etc.
-        size = self.screen.get_size()
-        self.tileSize = min(size[0] / self.maze.width,
-                            size[1] / self.maze.height)
-        self.bounds = pygame.Rect((size[0] - self.tileSize *
-                                   self.maze.width) / 2,
-                                  (size[1] - self.tileSize *
-                                   self.maze.height) / 2,
-                                  self.tileSize * self.maze.width,
-                                  self.tileSize * self.maze.height)
-        self.outline = int(self.tileSize / 5)
-
-        def drawPoint(x, y):
-            rect = pygame.Rect(self.bounds.x + x * self.tileSize,
-                               self.bounds.y + y * self.tileSize,
-                               self.tileSize, self.tileSize)
-            tile = self.maze.map[x][y]
-            if tile == self.maze.EMPTY:
-                pygame.draw.rect(self.screen, self.EMPTY_COLOR, rect, 0)
-            elif tile == self.maze.SOLID:
-                pygame.draw.rect(self.screen, self.SOLID_COLOR, rect, 0)
-            elif tile == self.maze.SEEN:
-                pygame.draw.rect(self.screen, self.EMPTY_COLOR, rect, 0)
-                dot = rect.inflate(-self.outline * 2, -self.outline * 2)
-                pygame.draw.ellipse(self.screen, self.TRAIL_COLOR, dot, 0)
-            elif tile == self.maze.GOAL:
-                pygame.draw.rect(self.screen, self.GOAL_COLOR, rect, 0)
-            else:
-                pygame.draw.rect(self.screen, (0xff, 0x00, 0xff), rect, 0)
-
-        # re-draw the dirty rectangle
-        if self.dirtyRect is not None:
-            # compute the area that needs to be redrawn
-            left = max(0, self.dirtyRect.left)
-            right = min(self.maze.width, self.dirtyRect.right)
-            top = max(0, self.dirtyRect.top)
-            bottom = min(self.maze.height, self.dirtyRect.bottom)
-
-            # loop over the dirty rect and draw
-            for x in range(left, right):
-                for y in range(top, bottom):
-                    drawPoint(x, y)
-
-        # re-draw the dirty points
-        for x, y in self.dirtyPoints:
-            drawPoint(x, y)
-
-        # draw all players
-        for player in self.allplayers:
-            if not player.hidden:
-                player.draw(self.screen, self.bounds, self.tileSize)
-
-        # draw the elapsed time for each player that has finished
-        finishedPlayers = filter(lambda p: p.elapsed is not None,
-                                 self.allplayers)
-        finishedPlayers.sort(lambda a, b: cmp(a.elapsed, b.elapsed))
-        y = 0
-        for player in finishedPlayers:
-            fg, bg = player.colors
-            text = "%3.2f - %s" % (player.elapsed, player.nick)
-            textimg = self.font.render(text, 1, fg)
-            textwidth, textheight = self.font.size(text)
-            rect = pygame.Rect(8, y + 4, textwidth, textheight)
-            bigrect = rect.inflate(16, 8)
-            pygame.draw.rect(self.screen, bg, bigrect, 0)
-            pygame.draw.rect(self.screen, fg, bigrect, 2)
-            self.screen.blit(textimg, rect)
-
-            y += bigrect.height + 4
-
-        # clear the dirty rect so nothing will be drawn until there is a change
-        self.dirtyRect = None
-        self.dirtyPoints = []
-
 
 def main():
     """Run a game of Maze."""
-    #canvas_size = 1024,768-75
-    #screen = pygame.display.set_mode(canvas_size)
+    # canvas_size = 1024,768-75
+    # screen = pygame.display.set_mode(canvas_size)
 
     # ask pygame how big the screen is, leaving a little room for the toolbar
     toolbarheight = 75

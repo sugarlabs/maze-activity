@@ -1,17 +1,29 @@
 # -*- coding: utf-8 -*-
 
-import logging
-import olpcgames
-import gtk
+from gi.repository import Gtk
 
-from sugar.activity.widgets import ActivityToolbarButton
-from sugar.activity.widgets import StopButton
-from sugar.graphics.toolbarbox import ToolbarBox
-from sugar.graphics.toolbutton import ToolButton
+from sugar3.activity import activity
+from sugar3.activity.widgets import ActivityToolbarButton
+from sugar3.activity.widgets import StopButton
+from sugar3.graphics.toolbarbox import ToolbarBox
+from sugar3.graphics.toolbutton import ToolButton
 from gettext import gettext as _
 
+import game
 
-class MazeActivity(olpcgames.PyGameActivity):
+
+class MazeActivity(activity.Activity):
+
+    def __init__(self, handle):
+        """Set up the HelloWorld activity."""
+        activity.Activity.__init__(self, handle)
+        self.build_toolbar()
+
+        self.game = game.MazeGame()
+        self.set_canvas(self.game)
+        self.game.show()
+
+    """
     game_name = 'game'
     game_title = _('Maze')
     game_size = None    # Let olpcgames pick a nice size for us
@@ -51,6 +63,7 @@ class MazeActivity(olpcgames.PyGameActivity):
             # if set at this point, it means we've already joined (i.e.,
             # launched from Neighborhood)
             joined_cb()
+    """
 
     def build_toolbar(self):
         """Build our Activity toolbar for the Sugar system."""
@@ -60,7 +73,7 @@ class MazeActivity(olpcgames.PyGameActivity):
         toolbar_box.toolbar.insert(activity_button, 0)
         activity_button.show()
 
-        separator = gtk.SeparatorToolItem()
+        separator = Gtk.SeparatorToolItem()
         toolbar_box.toolbar.insert(separator, -1)
         separator.show()
 
@@ -74,7 +87,7 @@ class MazeActivity(olpcgames.PyGameActivity):
         harder_button.connect('clicked', self._harder_button_cb)
         toolbar_box.toolbar.insert(harder_button, -1)
 
-        separator = gtk.SeparatorToolItem()
+        separator = Gtk.SeparatorToolItem()
         separator.props.draw = False
         separator.set_size_request(0, -1)
         separator.set_expand(True)
@@ -88,17 +101,10 @@ class MazeActivity(olpcgames.PyGameActivity):
         self.set_toolbar_box(toolbar_box)
         toolbar_box.show_all()
 
-        self.connect("destroy", self.__stop_pygame)
-
         return toolbar_box
 
-    def __stop_pygame(self, widget):
-        pygame.quit()
-
     def _easier_button_cb(self, button):
-        pygame.event.post(olpcgames.eventwrap.Event(
-            pygame.USEREVENT, action='easier_button'))
+        self.game.easier()
 
     def _harder_button_cb(self, button):
-        pygame.event.post(olpcgames.eventwrap.Event(
-            pygame.USEREVENT, action='harder_button'))
+        self.game.harder()
