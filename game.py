@@ -28,30 +28,12 @@ import time
 import json
 import gtk
 
-import pygame
-import olpcgames
-
 import logging
-logging.basicConfig()
-log = logging.getLogger('Maze')
-log.setLevel(logging.DEBUG)
 
-import olpcgames.pausescreen as pausescreen
-import olpcgames.mesh as mesh
-from olpcgames.util import get_bundle_path
 from sugar.presence import presenceservice
 from sugar.graphics.style import GRID_CELL_SIZE
 
-bundlepath = get_bundle_path()
 presenceService = presenceservice.get_instance()
-
-# # MakeBot on OS X - useful for prototyping with pygame
-# # http://stratolab.com/misc/makebot/
-# sys.path.append("/Applications/MakeBot-1.4/site-packages")
-# import pygame
-# pygame.init()
-# bundlepath = ""
-# canvas_size = (1200,825)
 
 from maze import Maze
 from player import Player
