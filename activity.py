@@ -2,11 +2,7 @@
 
 import logging
 import olpcgames
-import pygame
 import gtk
-
-from olpcgames import mesh
-from olpcgames import util
 
 from sugar.activity.widgets import ActivityToolbarButton
 from sugar.activity.widgets import StopButton
