@@ -25,10 +25,10 @@
 
 import sys
 import time
-import json
 from math import pi
 from gi.repository import Gdk
 from gi.repository import Gtk
+from gi.repository import GObject
 
 import logging
 
@@ -52,7 +52,7 @@ class MazeGame(Gtk.DrawingArea):
     GOAL_COLOR = (0x00, 0xff, 0x00)
     WIN_COLOR = (0xff, 0xff, 0x00)
 
-    def __init__(self):
+    def __init__(self, state=None):
         super(MazeGame, self).__init__()
         # note what time it was when we first launched
         self.game_start_time = time.time()
@@ -77,12 +77,13 @@ class MazeGame(Gtk.DrawingArea):
 
         # start with a small maze using a seed that will be different
         # each time you play
-        data = {'seed': int(time.time()),
-                'width': int(9 * self.aspectRatio),
-                'height': 9}
+        if state is None:
+            state = {'seed': int(time.time()),
+                     'width': int(9 * self.aspectRatio),
+                     'height': 9}
 
-        logging.debug('Starting the game with: %s', data)
-        self.maze = Maze(**data)
+        logging.debug('Starting the game with: %s', state)
+        self.maze = Maze(**state)
         self.reset()
 
         self.frame = 0
@@ -91,27 +92,37 @@ class MazeGame(Gtk.DrawingArea):
 
         # support arrow keys, game pad arrows and game pad buttons
         # each set maps to a local player index and a direction
-        # TODO
-        """
         self.arrowkeys = {
             # real key:     (localplayer index, ideal key)
-            pygame.K_UP: (0, pygame.K_UP),
-            pygame.K_DOWN: (0, pygame.K_DOWN),
-            pygame.K_LEFT: (0, pygame.K_LEFT),
-            pygame.K_RIGHT: (0, pygame.K_RIGHT),
-            pygame.K_KP8: (1, pygame.K_UP),
-            pygame.K_KP2: (1, pygame.K_DOWN),
-            pygame.K_KP4: (1, pygame.K_LEFT),
-            pygame.K_KP6: (1, pygame.K_RIGHT),
-            pygame.K_KP9: (2, pygame.K_UP),
-            pygame.K_KP3: (2, pygame.K_DOWN),
-            pygame.K_KP7: (2, pygame.K_LEFT),
-            pygame.K_KP1: (2, pygame.K_RIGHT)
+            'Up': (0, 'Up'),
+            'Down': (0, 'Down'),
+            'Left': (0, 'Left'),
+            'Right': (0, 'Right'),
+            'KP_Up': (1, 'Up'),
+            'KP_Down': (1, 'Down'),
+            'KP_Left': (1, 'Left'),
+            'KP_Right': (1, 'Right'),
+            'KP_Page_Up': (2, 'Up'),
+            'KP_Page_Down': (2, 'Down'),
+            'KP_Home': (2, 'Left'),
+            'KP_End': (2, 'Right')
         }
-        """
+
         Gdk.Screen.get_default().connect('size-changed',
                                          self.__configure_cb)
         self.connect('draw', self.__draw_cb)
+        self.connect('event', self.__event_cb)
+
+        self.set_events(
+            Gdk.EventMask.EXPOSURE_MASK | Gdk.EventMask.BUTTON_PRESS_MASK |
+            Gdk.EventMask.BUTTON_RELEASE_MASK |
+            Gdk.EventMask.BUTTON_MOTION_MASK |
+            Gdk.EventMask.POINTER_MOTION_MASK |
+            Gdk.EventMask.POINTER_MOTION_HINT_MASK |
+            Gdk.EventMask.KEY_PRESS_MASK |
+            Gdk.EventMask.TOUCH_MASK)
+        self.set_can_focus(True)
+        self.grab_focus()
 
     def __configure_cb(self, event):
         ''' Screen size has changed '''
@@ -182,12 +193,11 @@ class MazeGame(Gtk.DrawingArea):
         self.outline = int(self.tileSize / 5)
 
         def drawPoint(x, y):
-            # logging.error('drawing %s %s = %s', x, y, self.maze.map[x][y])
             rect = Rectangle(self.bounds.x + x * self.tileSize,
                              self.bounds.y + y * self.tileSize,
                              self.tileSize, self.tileSize)
             tile = self.maze.map[x][y]
-            background_color = (0xff, 0x00, 0xff)
+            background_color = self.EMPTY_COLOR
             if tile == self.maze.EMPTY:
                 background_color = self.EMPTY_COLOR
             elif tile == self.maze.SOLID:
@@ -197,13 +207,13 @@ class MazeGame(Gtk.DrawingArea):
             ctx.save()
             ctx.set_source_rgb(*background_color)
             ctx.rectangle(*rect.get_bounds())
-            logging.error('drawing %s %s', rect.get_bounds(), background_color)
             ctx.fill()
 
             if tile == self.maze.SEEN:
                 ctx.set_source_rgb(*self.TRAIL_COLOR)
                 radius = self.tileSize / 2 - self.outline
-                ctx.arc(rect.x + radius, rect.y + radius, radius, 0, 2 * pi)
+                center = self.tileSize / 2
+                ctx.arc(rect.x + center, rect.y + center, radius, 0, 2 * pi)
                 ctx.fill()
             ctx.restore()
 
@@ -269,42 +279,76 @@ class MazeGame(Gtk.DrawingArea):
         """Mark a single point that needs to be redrawn."""
         self.dirtyPoints.append(pt)
 
+    def __event_cb(self, widget, event):
+        pass
+        """
+        if event.type in (
+                Gdk.EventType.TOUCH_BEGIN,
+                Gdk.EventType.TOUCH_CANCEL, Gdk.EventType.TOUCH_END,
+                Gdk.EventType.TOUCH_UPDATE, Gdk.EventType.BUTTON_PRESS,
+                Gdk.EventType.BUTTON_RELEASE, Gdk.EventType.MOTION_NOTIFY):
+            x = event.touch.x
+            y = event.touch.y
+            seq = str(event.touch.sequence)
+            updated_positions = False
+            # save a copy of the old touches
+        """
+
+    def key_press_cb(self, widget, event):
+        key_name = Gdk.keyval_name(event.keyval)
+        logging.error('key %s presssed', key_name)
+        if key_name in ('plus', 'equal'):
+            self.harder()
+        elif key_name == 'minus':
+            self.easier()
+        elif key_name in self.arrowkeys:
+            playernum, direction = self.arrowkeys[key_name]
+            player = self.localplayers[playernum]
+            player.hidden = False
+
+            if direction == 'Up':
+                player.direction = (0, -1)
+            elif direction == 'Down':
+                player.direction = (0, 1)
+            elif direction == 'Left':
+                player.direction = (-1, 0)
+            elif direction == 'Right':
+                player.direction = (1, 0)
+
+            if len(self.remoteplayers) > 0:
+                mesh.broadcast("move:%s,%d,%d,%d,%d" %
+                               (player.uid,
+                                player.position[0],
+                                player.position[1],
+                                player.direction[0],
+                                player.direction[1]))
+            self.player_walk(player)
+
+    def player_walk(self, player):
+        oldposition = player.position
+        newposition = player.animate(self.maze)
+        if oldposition != newposition:
+            self.markPointDirty(oldposition)
+            self.markPointDirty(newposition)
+            if player in self.localplayers:
+                self.maze.map[player.previous[0]][player.previous[1]] = \
+                    self.maze.SEEN
+                if self.maze.map[newposition[0]][newposition[1]] == \
+                        self.maze.GOAL:
+                    self.finish(player)
+            self.queue_draw()
+            GObject.timeout_add(200, self.player_walk, player)
+        """
+        finish_delay = min(2 * len(self.allplayers), 6)
+        if self.finish_time is not None and \
+           time.time() > self.finish_time + finish_delay:
+            self.harder()
+        """
+
     def processEvent(self, event):
         """Process a single pygame event.  This includes keystrokes
         as well as multiplayer events from the mesh."""
-        if event.type == pygame.QUIT:
-            self.running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key in (pygame.K_PLUS, pygame.K_EQUALS):
-                self.harder()
-            elif event.key == pygame.K_MINUS:
-                self.easier()
-            elif event.key in self.arrowkeys:
-                playernum, direction = self.arrowkeys[event.key]
-                player = self.localplayers[playernum]
-                player.hidden = False
-
-                if direction == pygame.K_UP:
-                    player.direction = (0, -1)
-                elif direction == pygame.K_DOWN:
-                    player.direction = (0, 1)
-                elif direction == pygame.K_LEFT:
-                    player.direction = (-1, 0)
-                elif direction == pygame.K_RIGHT:
-                    player.direction = (1, 0)
-
-                if len(self.remoteplayers) > 0:
-                    mesh.broadcast("move:%s,%d,%d,%d,%d" %
-                                   (player.uid,
-                                    player.position[0],
-                                    player.position[1],
-                                    player.direction[0],
-                                    player.direction[1]))
-        elif event.type == pygame.KEYUP:
-            pass
-        elif event.type == pygame.MOUSEMOTION:
-            pass
-        elif event.type == pygame.MOUSEBUTTONDOWN:
+        if event.type == pygame.MOUSEBUTTONDOWN:
             self.mouse_in_use = 1
             self.prev_mouse_pos = pygame.mouse.get_pos()
 
@@ -414,35 +458,6 @@ class MazeGame(Gtk.DrawingArea):
                                   event, sys.exc_info())
             else:
                 logging.debug("Message from unknown buddy?")
-
-        elif event.type == pygame.USEREVENT:
-            # process our buttons
-            if hasattr(event, 'action') and event.action == 'harder_button':
-                self.harder()
-            elif hasattr(event, 'action') and event.action == 'easier_button':
-                self.easier()
-            # process file save / restore events
-            elif event.code == olpcgames.FILE_READ_REQUEST:
-                logging.debug('Loading the state of the game...')
-                state = json.loads(event.metadata['state'])
-                logging.debug('Loaded data: %s', state)
-                self.maze = Maze(**state)
-                self.reset()
-                return True
-            elif event.code == olpcgames.FILE_WRITE_REQUEST:
-                logging.debug('Saving the state of the game...')
-                data = {'seed': self.maze.seed,
-                        'width': self.maze.width,
-                        'height': self.maze.height, }
-                logging.debug('Saving data: %s', data)
-                event.metadata['state'] = json.dumps(data)
-                f = open(event.filename, 'w')
-                try:
-                    f.write(str(time.time()))
-                finally:
-                    f.close()
-                logging.debug('Done saving.')
-                return True
         else:
             logging.debug('Unknown event: %r', event)
 
@@ -518,39 +533,6 @@ class MazeGame(Gtk.DrawingArea):
             # it was something I don't recognize...
             logging.debug("Message from %s: %s", player.nick, message)
 
-    def arrowKeysPressed(self):
-        keys = pygame.key.get_pressed()
-        for key in self.allkeys:
-            if keys[key]:
-                return True
-        return False
-
-    def run(self):
-        """Run the main loop of the game."""
-        # lets draw once before we enter the event loop
-
-        clock = pygame.time.Clock()
-        pygame.display.flip()
-
-        while self.running:
-            clock.tick(25)
-
-            a, b, c, d = pygame.cursors.load_xbm('my_cursor.xbm',
-                                                 'my_cursor_mask.xbm')
-            pygame.mouse.set_cursor(a, b, c, d)
-            self.frame += 1
-            # process all queued events
-            for event in pausescreen.get_events(sleep_timeout=30):
-                self.processEvent(event)
-
-            self.animate()
-            self.draw()
-
-            pygame.display.update()
-            # don't animate faster than about 20 frames per second
-            # this keeps the speed reasonable and limits cpu usage
-            clock.tick(25)
-
     def harder(self):
         """Make a new maze that is harder than the current one."""
         # both width and height must be odd
@@ -585,50 +567,8 @@ class MazeGame(Gtk.DrawingArea):
                            (self.game_running_time(), self.maze.seed,
                             self.maze.width, self.maze.height))
 
-    def animate(self):
-        """Animate one frame of action."""
-
-        for player in self.allplayers:
-            oldposition = player.position
-            newposition = player.animate(self.maze)
-            if oldposition != newposition:
-                self.markPointDirty(oldposition)
-                self.markPointDirty(newposition)
-                if player in self.localplayers:
-                    self.maze.map[player.previous[0]][player.previous[1]] = \
-                        self.maze.SEEN
-                    if self.maze.map[newposition[0]][newposition[1]] == \
-                            self.maze.GOAL:
-                        self.finish(player)
-
-        finish_delay = min(2 * len(self.allplayers), 6)
-        if self.finish_time is not None and \
-           time.time() > self.finish_time + finish_delay:
-            self.harder()
-
     def finish(self, player):
         self.finish_time = time.time()
         player.elapsed = self.finish_time - self.level_start_time
         if len(self.remoteplayers) > 0:
             mesh.broadcast("finish:%s,%.2f" % (player.nick, player.elapsed))
-
-
-def main():
-    """Run a game of Maze."""
-    # canvas_size = 1024,768-75
-    # screen = pygame.display.set_mode(canvas_size)
-
-    # ask pygame how big the screen is, leaving a little room for the toolbar
-    toolbarheight = 75
-    pygame.display.init()
-#    maxX,maxY = pygame.display.list_modes()[0]
-    videoinfo = pygame.display.Info()
-    width = videoinfo.current_w
-    height = videoinfo.current_h - toolbarheight
-    screen = pygame.display.set_mode((width, height))
-
-    game = MazeGame(screen)
-    game.run()
-
-if __name__ == '__main__':
-    main()
