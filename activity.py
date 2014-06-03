@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import logging
+import json
+
 from gi.repository import Gtk
 
 from sugar3.activity import activity
@@ -19,9 +22,11 @@ class MazeActivity(activity.Activity):
         activity.Activity.__init__(self, handle)
         self.build_toolbar()
 
-        self.game = game.MazeGame()
+        state = json.loads(self.metadata['state'])
+        self.game = game.MazeGame(state)
         self.set_canvas(self.game)
         self.game.show()
+        self.connect("key_press_event", self.game.key_press_cb)
 
     """
     game_name = 'game'
@@ -108,3 +113,14 @@ class MazeActivity(activity.Activity):
 
     def _harder_button_cb(self, button):
         self.game.harder()
+
+    def write_file(self, file_path):
+        logging.debug('Saving the state of the game...')
+        data = {'seed': self.game.maze.seed,
+                'width': self.game.maze.width,
+                'height': self.game.maze.height, }
+        logging.debug('Saving data: %s', data)
+        self.metadata['state'] = json.dumps(data)
+
+    def read_file(self, file_path):
+        pass
