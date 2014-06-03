@@ -280,19 +280,53 @@ class MazeGame(Gtk.DrawingArea):
         self.dirtyPoints.append(pt)
 
     def __event_cb(self, widget, event):
-        pass
-        """
-        if event.type in (
-                Gdk.EventType.TOUCH_BEGIN,
-                Gdk.EventType.TOUCH_CANCEL, Gdk.EventType.TOUCH_END,
-                Gdk.EventType.TOUCH_UPDATE, Gdk.EventType.BUTTON_PRESS,
-                Gdk.EventType.BUTTON_RELEASE, Gdk.EventType.MOTION_NOTIFY):
-            x = event.touch.x
-            y = event.touch.y
-            seq = str(event.touch.sequence)
-            updated_positions = False
-            # save a copy of the old touches
-        """
+
+        if event.type in (Gdk.EventType.TOUCH_BEGIN,
+                          Gdk.EventType.TOUCH_CANCEL, Gdk.EventType.TOUCH_END,
+                          Gdk.EventType.BUTTON_PRESS,
+                          Gdk.EventType.BUTTON_RELEASE):
+            x = int(event.get_coords()[1])
+            y = int(event.get_coords()[2])
+
+            # logging.error('event x %d y %d type %s', x, y, event.type)
+            if event.type in (Gdk.EventType.TOUCH_BEGIN,
+                              Gdk.EventType.BUTTON_PRESS):
+                self.prev_mouse_pos = (x, y)
+            elif event.type in (Gdk.EventType.TOUCH_END,
+                                Gdk.EventType.BUTTON_RELEASE):
+
+                new_mouse_pos = (x, y)
+                mouse_movement = (new_mouse_pos[0] - self.prev_mouse_pos[0],
+                                  new_mouse_pos[1] - self.prev_mouse_pos[1])
+
+                if ((abs(mouse_movement[0]) > 10) or
+                        (abs(mouse_movement[1]) > 10)):
+                    player = self.localplayers[0]
+                    player.hidden = False
+                    # x movement larger
+                    if abs(mouse_movement[0]) > abs(mouse_movement[1]):
+                        if mouse_movement[0] > 0:
+                            # RIGHT
+                            player.direction = (1, 0)
+                        else:
+                            # LEFT
+                            player.direction = (-1, 0)
+                    else:
+                        if mouse_movement[1] < 0:
+                            # UP
+                            player.direction = (0, -1)
+                        else:
+                            # DOWN
+                            player.direction = (0, 1)
+
+                    if len(self.remoteplayers) > 0:
+                        mesh.broadcast("move:%s,%d,%d,%d,%d" %
+                                       (player.nick,
+                                        player.position[0],
+                                        player.position[1],
+                                        player.direction[0],
+                                        player.direction[1]))
+                    self.player_walk(player)
 
     def key_press_cb(self, widget, event):
         key_name = Gdk.keyval_name(event.keyval)
@@ -348,46 +382,7 @@ class MazeGame(Gtk.DrawingArea):
     def processEvent(self, event):
         """Process a single pygame event.  This includes keystrokes
         as well as multiplayer events from the mesh."""
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            self.mouse_in_use = 1
-            self.prev_mouse_pos = pygame.mouse.get_pos()
-
-        elif event.type == pygame.MOUSEBUTTONUP:
-            if self.mouse_in_use:
-                new_mouse_pos = pygame.mouse.get_pos()
-                mouse_movement = (new_mouse_pos[0] - self.prev_mouse_pos[0],
-                                  new_mouse_pos[1] - self.prev_mouse_pos[1])
-
-                if ((abs(mouse_movement[0]) > 10) or
-                        (abs(mouse_movement[1]) > 10)):
-                    player = self.localplayers[0]
-                    player.hidden = False
-                    # x movement larger
-                    if abs(mouse_movement[0]) > abs(mouse_movement[1]):
-                        # direction == pygame.K_RIGHT
-                        if mouse_movement[0] > 0:
-                            player.direction = (1, 0)
-                        else:
-                            # direction == pygame.K_LEFT
-                            player.direction = (-1, 0)
-                    else:
-                        if mouse_movement[1] < 0:
-                            # direction == pygame.K_UP
-                            player.direction = (0, -1)
-                        else:                     # direction == pygame.K_DOWN
-                            player.direction = (0, 1)
-
-                    if len(self.remoteplayers) > 0:
-                        mesh.broadcast("move:%s,%d,%d,%d,%d" %
-                                       (player.nick,
-                                        player.position[0],
-                                        player.position[1],
-                                        player.direction[0],
-                                        player.direction[1]))
-
-            self.mouse_in_use = 0
-
-        elif event.type == mesh.CONNECT:
+        if event.type == mesh.CONNECT:
             logging.debug("Connected to the mesh")
 
         elif event.type == mesh.PARTICIPANT_ADD:
