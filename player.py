@@ -63,9 +63,9 @@ class Player:
                           size - line_width * 2, size - line_width * 2)
         elif self.shape == 'triangle':
             ctx.new_path()
-            ctx.move_to(rect.x, rect.y + size)
-            ctx.line_to(rect.x + size / 2, rect.y)
-            ctx.line_to(rect.x + size, rect.y + size)
+            ctx.move_to(rect.x + line_width, rect.y + size - line_width)
+            ctx.line_to(rect.x + size / 2, rect.y + line_width)
+            ctx.line_to(rect.x + size - line_width, rect.y + size - line_width)
             ctx.close_path()
 
         ctx.set_source_rgba(*self.bg.get_rgba())
