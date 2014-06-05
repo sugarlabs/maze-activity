@@ -244,26 +244,37 @@ class MazeGame(Gtk.DrawingArea):
             if not player.hidden:
                 player.draw(ctx, self.bounds, self.tileSize)
 
-        # draw the elapsed time for each player that has finished
-        # TODO
-        """
         finishedPlayers = filter(lambda p: p.elapsed is not None,
                                  self.allplayers)
         finishedPlayers.sort(lambda a, b: cmp(a.elapsed, b.elapsed))
-        y = 0
+        y = 20
+        x = 20
+        box_border = 3
+        ctx.set_font_size(25)
         for player in finishedPlayers:
-            fg, bg = player.colors
             text = "%3.2f - %s" % (player.elapsed, player.nick)
-            textimg = self.font.render(text, 1, fg)
-            textwidth, textheight = self.font.size(text)
-            rect = pygame.Rect(8, y + 4, textwidth, textheight)
-            bigrect = rect.inflate(16, 8)
-            pygame.draw.rect(self.screen, bg, bigrect, 0)
-            pygame.draw.rect(self.screen, fg, bigrect, 2)
-            self.screen.blit(textimg, rect)
+            ctx.save()
+            xbearing, ybearing, text_width, text_height, xadv, yadv = \
+                ctx.text_extents(text)
+            ctx.rectangle(x - box_border, y - box_border,
+                          text_width + box_border * 2,
+                          text_height + box_border * 2)
+            ctx.set_source_rgba(*player.bg.get_rgba())
+            ctx.set_line_width(2)
+            ctx.fill_preserve()
+            ctx.set_source_rgba(*player.fg.get_rgba())
+            ctx.stroke()
+            ctx.restore()
 
-            y += bigrect.height + 4
-        """
+            ctx.save()
+            ctx.set_source_rgb(0, 0, 0)
+            ctx.move_to(x, y + text_height)
+            ctx.show_text(text)
+            ctx.stroke()
+            ctx.restore()
+
+            x += text_width + 20
+
         # clear the dirty rect so nothing will be drawn until there is a change
         # TODO
         # self.dirtyRect = None
@@ -452,7 +463,7 @@ class MazeGame(Gtk.DrawingArea):
             move: x, y, dx, dy
                 A player's at x, y is now moving in direction dx, dy
 
-            finish: nick, elapsed
+            finish: elapsed
                 A player has finished the maze
         """
         logging.debug('message: %s', message)
@@ -491,10 +502,9 @@ class MazeGame(Gtk.DrawingArea):
                 self.reset()
         elif message.startswith("finish:"):
             # someone finished the maze
-            uid, elapsed = message[7:].split(",")[:2]
-            player = player.bonusPlayer(uid)
+            elapsed = message[7:]
             player.elapsed = float(elapsed)
-            self.markPointDirty(player.position)
+            self.queue_draw()
         else:
             # it was something I don't recognize...
             logging.debug("Message from %s: %s", player.nick, message)
@@ -538,6 +548,6 @@ class MazeGame(Gtk.DrawingArea):
     def finish(self, player):
         self.finish_time = time.time()
         player.elapsed = self.finish_time - self.level_start_time
+        self.queue_draw()
         if len(self.remoteplayers) > 0:
-            self._activity.broadcast_msg("finish:%s,%.2f" % (player.nick,
-                                                             player.elapsed))
+            self._activity.broadcast_msg("finish:%.2f" % player.elapsed)
