@@ -52,10 +52,13 @@ class MazeGame(Gtk.DrawingArea):
     GOAL_COLOR = (0x00, 0xff, 0x00)
     WIN_COLOR = (0xff, 0xff, 0x00)
 
-    def __init__(self, state=None):
+    def __init__(self, activity, state=None):
         super(MazeGame, self).__init__()
         # note what time it was when we first launched
         self.game_start_time = time.time()
+
+        # the activity is used to communicate with other players
+        self._activity = activity
 
         xoOwner = presenceService.get_owner()
         # keep a list of all local players
@@ -320,17 +323,15 @@ class MazeGame(Gtk.DrawingArea):
                             player.direction = (0, 1)
 
                     if len(self.remoteplayers) > 0:
-                        mesh.broadcast("move:%s,%d,%d,%d,%d" %
-                                       (player.nick,
-                                        player.position[0],
-                                        player.position[1],
-                                        player.direction[0],
-                                        player.direction[1]))
+                        self._activity.broadcast_msg(
+                            "move:%s,%d,%d,%d,%d" %
+                            (player.nick, player.position[0],
+                             player.position[1], player.direction[0],
+                             player.direction[1]))
                     self.player_walk(player)
 
     def key_press_cb(self, widget, event):
         key_name = Gdk.keyval_name(event.keyval)
-        logging.error('key %s presssed', key_name)
         if key_name in ('plus', 'equal'):
             self.harder()
         elif key_name == 'minus':
@@ -350,12 +351,10 @@ class MazeGame(Gtk.DrawingArea):
                 player.direction = (1, 0)
 
             if len(self.remoteplayers) > 0:
-                mesh.broadcast("move:%s,%d,%d,%d,%d" %
-                               (player.uid,
-                                player.position[0],
-                                player.position[1],
-                                player.direction[0],
-                                player.direction[1]))
+                self._activity.broadcast_msg(
+                    "move:%d,%d,%d,%d" % (
+                        player.position[0], player.position[1],
+                        player.direction[0], player.direction[1]))
             self.player_walk(player)
 
     def player_walk(self, player):
@@ -371,7 +370,7 @@ class MazeGame(Gtk.DrawingArea):
                         self.maze.GOAL:
                     self.finish(player)
             self.queue_draw()
-            GObject.timeout_add(200, self.player_walk, player)
+            GObject.timeout_add(100, self.player_walk, player)
         """
         finish_delay = min(2 * len(self.allplayers), 6)
         if self.finish_time is not None and \
@@ -379,85 +378,61 @@ class MazeGame(Gtk.DrawingArea):
             self.harder()
         """
 
-    def processEvent(self, event):
-        """Process a single pygame event.  This includes keystrokes
-        as well as multiplayer events from the mesh."""
-        if event.type == mesh.CONNECT:
-            logging.debug("Connected to the mesh")
+    def buddy_joined(self, buddy):
+        if buddy:
+            logging.debug("Join: %s - %s", buddy.props.nick,
+                          buddy.props.color)
+            player = Player(buddy)
+            player.uid = buddy.get_key()
+            self.remoteplayers[buddy.get_key()] = player
+            self.allplayers.append(player)
+            self.allplayers.extend(player.bonusPlayers())
+            self.markPointDirty(player.position)
 
-        elif event.type == mesh.PARTICIPANT_ADD:
-            logging.debug('mesh.PARTICIPANT_ADD')
+    def _send_maze(self, player):
+        # tell them which maze we are playing, so they can sync up
+        self._activity.broadcast_msg(
+            "maze:%d,%d,%d,%d" %
+            (self.game_running_time(), self.maze.seed, self.maze.width,
+             self.maze.height))
+        for player in self.localplayers:
+            if not player.hidden:
+                self._activity.broadcast_msg(
+                    "move:%d,%d,%d,%d" %
+                    (player.position[0], player.position[1],
+                     player.direction[0], player.direction[1]))
 
-            def withBuddy(buddy):
-                if event.handle == mesh.my_handle():
-                    logging.debug("Me: %s - %s", buddy.props.nick,
-                                  buddy.props.color)
-                    # README: this is a workaround to use an unique
-                    # identifier instead the nick of the buddy
-                    # http://dev.laptop.org/ticket/10750
-                    count = ''
-                    for i, player in enumerate(self.localplayers):
-                        if i > 0:
-                            count = '-%d' % i
-                        player.uid = mesh.my_handle() + count
-                else:
-                    logging.debug("Join: %s - %s", buddy.props.nick,
-                                  buddy.props.color)
-                    player = Player(buddy)
-                    player.uid = event.handle
-                    self.remoteplayers[event.handle] = player
-                    self.allplayers.append(player)
-                    self.allplayers.extend(player.bonusPlayers())
-                    self.markPointDirty(player.position)
-                    # send a test message to the new player
-                    mesh.broadcast("Welcome %s" % player.nick)
-                    # tell them which maze we are playing, so they can sync up
-                    mesh.send_to(event.handle, "maze:%d,%d,%d,%d" %
-                                 (self.game_running_time(),
-                                  self.maze.seed,
-                                  self.maze.width, self.maze.height))
-                    for player in self.localplayers:
-                        if not player.hidden:
-                            mesh.send_to(event.handle,
-                                         "move:%s,%d,%d,%d,%d" %
-                                         (player.uid,
-                                          player.position[0],
-                                          player.position[1],
-                                          player.direction[0],
-                                          player.direction[1]))
+    def buddy_left(self, buddy):
+        logging.debug('buddy left %s %s', buddy.__class__, dir(buddy))
+        if buddy.get_key() in self.remoteplayers:
+            player = self.remoteplayers[buddy.get_key()]
+            logging.debug("Leave: %s", player.nick)
+            self.markPointDirty(player.position)
+            self.allplayers.remove(player)
+            for bonusplayer in player.bonusPlayers():
+                self.markPointDirty(bonusplayer.position)
+                self.allplayers.remove(bonusplayer)
+            del self.remoteplayers[buddy.get_key()]
 
-            mesh.lookup_buddy(event.handle, callback=withBuddy)
-        elif event.type == mesh.PARTICIPANT_REMOVE:
-            logging.debug('mesh.PARTICIPANT_REMOVE')
-            if event.handle in self.remoteplayers:
-                player = self.remoteplayers[event.handle]
-                logging.debug("Leave: %s", player.nick)
-                self.markPointDirty(player.position)
-                self.allplayers.remove(player)
-                for bonusplayer in player.bonusPlayers():
-                    self.markPointDirty(bonusplayer.position)
-                    self.allplayers.remove(bonusplayer)
-                del self.remoteplayers[event.handle]
-        elif event.type == mesh.MESSAGE_UNI or \
-                event.type == mesh.MESSAGE_MULTI:
-            logging.debug('mesh.MESSAGE_UNI or mesh.MESSAGE_MULTI')
-            if event.handle == mesh.my_handle():
-                # ignore messages from ourself
-                pass
-            elif event.handle in self.remoteplayers:
-                player = self.remoteplayers[event.handle]
-                try:
-                    self.handleMessage(player, event.content)
-                except:
-                    logging.debug("Error handling message: %s\n%s",
-                                  event, sys.exc_info())
-            else:
-                logging.debug("Message from unknown buddy?")
+    def msg_received(self, buddy, message):
+        logging.debug('msg received %s', message)
+        key, message = message.split('|')
+        if message.startswith('maze'):
+            self.handleMessage(None, message)
+            return
+
+        if key in self.remoteplayers:
+            player = self.remoteplayers[key]
+            try:
+                self.handleMessage(player, message)
+            except:
+                logging.error("Error handling message: %s\n%s",
+                              message, sys.exc_info())
         else:
-            logging.debug('Unknown event: %r', event)
+            logging.error("Message from unknown buddy %s", key)
 
     def handleMessage(self, player, message):
-        """Handle a message from a player on the mesh.
+        """Handle a message from a player.
             We try to be forward compatible with new versions of Maze by
             allowing messages to have extra stuff at the end and ignoring
             unrecognized messages.
@@ -474,40 +449,36 @@ class MazeGame(Gtk.DrawingArea):
                 players to use that maze.
                 This way new players will join the existing game properly.
 
-            move: nick, x, y, dx, dy
+            move: x, y, dx, dy
                 A player's at x, y is now moving in direction dx, dy
 
             finish: nick, elapsed
                 A player has finished the maze
         """
-        logging.debug('mesh message: %s', message)
+        logging.debug('message: %s', message)
 
         # ignore messages from myself
         if player in self.localplayers:
             return
-        if message.startswith("move:"):
+        if message == "req_maze":
+            self._send_maze(player)
+        elif message.startswith("move:"):
             # a player has moved
-            uid, x, y, dx, dy = message[5:].split(",")[:5]
-
-            # README: this function (player.bonusPlayer) sometimes
-            # returns None and the activity doesn't move the players.
-            # This is because the name sent to the server is the
-            # child's name but it returns something like this:
-            #  * 6be01ff2bcfaa58eeacc7f10a57b77b65470d413@jabber.sugarlabs.org
-            # So, we have set remote users with this kind of name but
-            # we receive the reald child's name in the mesh message
-
-            player = player.bonusPlayer(uid)
-            player.hidden = False
+            x, y, dx, dy = message[5:].split(",")[:5]
 
             self.markPointDirty(player.position)
             player.position = (int(x), int(y))
             player.direction = (int(dx), int(dy))
             self.markPointDirty(player.position)
+            self.player_walk(player)
         elif message.startswith("maze:"):
             # someone has a different maze than us
+            self._activity.update_alert('Connected', 'Maze shared!')
             running_time, seed, width, height = map(lambda x: int(x),
                                                     message[5:].split(",")[:4])
+            if self.maze.seed == seed:
+                logging.debug('Same seed, don\'t reload Maze')
+                return
             # is that maze older than the one we're already playing?
             # note that we use elapsed time instead of absolute time because
             # people's clocks are often set to something totally wrong
@@ -541,9 +512,10 @@ class MazeGame(Gtk.DrawingArea):
         if len(self.remoteplayers) > 0:
             # but fudge it a little so that we can be sure they'll use our maze
             self.game_start_time -= 10
-            mesh.broadcast("maze:%d,%d,%d,%d" %
-                           (self.game_running_time(), self.maze.seed,
-                            self.maze.width, self.maze.height))
+            self._activity.broadcast_msg(
+                "maze:%d,%d,%d,%d" % (
+                    self.game_running_time(), self.maze.seed,
+                    self.maze.width, self.maze.height))
 
     def easier(self):
         """Make a new maze that is easier than the current one."""
@@ -558,12 +530,14 @@ class MazeGame(Gtk.DrawingArea):
         if len(self.remoteplayers) > 0:
             # but fudge it a little so that we can be sure they'll use our maze
             self.game_start_time -= 10
-            mesh.broadcast("maze:%d,%d,%d,%d" %
-                           (self.game_running_time(), self.maze.seed,
-                            self.maze.width, self.maze.height))
+            self._activity.broadcast_msg(
+                "maze:%d,%d,%d,%d" % (
+                    self.game_running_time(),
+                    self.maze.seed, self.maze.width, self.maze.height))
 
     def finish(self, player):
         self.finish_time = time.time()
         player.elapsed = self.finish_time - self.level_start_time
         if len(self.remoteplayers) > 0:
-            mesh.broadcast("finish:%s,%.2f" % (player.nick, player.elapsed))
+            self._activity.broadcast_msg("finish:%s,%.2f" % (player.nick,
+                                                             player.elapsed))
