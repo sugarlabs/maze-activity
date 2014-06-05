@@ -6,69 +6,52 @@ import json
 from gi.repository import Gtk
 
 from sugar3.activity import activity
+from sugar3.presence.presenceservice import PresenceService
 from sugar3.activity.widgets import ActivityToolbarButton
 from sugar3.activity.widgets import StopButton
 from sugar3.graphics.toolbarbox import ToolbarBox
 from sugar3.graphics.toolbutton import ToolButton
+from sugar3.graphics.alert import ErrorAlert
+from sugar3 import profile
 from gettext import gettext as _
 
+from textchannel import TextChannelWrapper
 import game
 
 
 class MazeActivity(activity.Activity):
 
     def __init__(self, handle):
-        """Set up the HelloWorld activity."""
+        """Set up the Maze activity."""
         activity.Activity.__init__(self, handle)
+
         self.build_toolbar()
 
-        state = json.loads(self.metadata['state'])
-        self.game = game.MazeGame(state)
+        state = None
+        if 'state' in self.metadata:
+            state = json.loads(self.metadata['state'])
+        self.game = game.MazeGame(self, state)
         self.set_canvas(self.game)
         self.game.show()
         self.connect("key_press_event", self.game.key_press_cb)
 
-    """
-    game_name = 'game'
-    game_title = _('Maze')
-    game_size = None    # Let olpcgames pick a nice size for us
+        self.pservice = PresenceService()
+        self.owner = self.pservice.get_owner()
 
-    def __init__(self, handle):
-        super(MazeActivity, self).__init__(handle)
+        self.text_channel = None
+        self.my_key = profile.get_pubkey()
+        self._alert = None
 
-        # This code was copied from olpcgames.activity.PyGameActivity
-        def shared_cb(*args, **kwargs):
-            logging.info('shared: %s, %s', args, kwargs)
-            try:
-                mesh.activity_shared(self)
-            except Exception, err:
-                logging.error('Failure signaling activity sharing'
-                              'to mesh module: %s', util.get_traceback(err))
-            else:
-                logging.info('mesh activity shared message sent,'
-                             ' trying to grab focus')
-            try:
-                self._pgc.grab_focus()
-            except Exception, err:
-                logging.warn('Focus failed: %s', err)
-            else:
-                logging.info('asserting focus')
-                assert self._pgc.is_focus(), \
-                    'Did not successfully set pygame canvas focus'
-            logging.info('callback finished')
-
-        def joined_cb(*args, **kwargs):
-            logging.info('joined: %s, %s', args, kwargs)
-            mesh.activity_joined(self)
-            self._pgc.grab_focus()
-        self.connect('shared', shared_cb)
-        self.connect('joined', joined_cb)
-
-        if self.get_shared():
-            # if set at this point, it means we've already joined (i.e.,
-            # launched from Neighborhood)
-            joined_cb()
-    """
+        if self.shared_activity:
+            # we are joining the activity
+            self._add_alert(_('Joining a maze'), _('Connecting...'))
+            self.connect('joined', self._joined_cb)
+            if self.get_shared():
+                # we have already joined
+                self._joined_cb()
+        else:
+            # we are creating the activity
+            self.connect('shared', self._shared_cb)
 
     def build_toolbar(self):
         """Build our Activity toolbar for the Sugar system."""
@@ -113,6 +96,75 @@ class MazeActivity(activity.Activity):
 
     def _harder_button_cb(self, button):
         self.game.harder()
+
+    def _shared_cb(self, activity):
+        logging.debug('Maze was shared')
+        self._add_alert(_('Sharing'), _('This maze is shared.'))
+        self._setup()
+
+    def _joined_cb(self, activity):
+        """Joined a shared activity."""
+        if not self.shared_activity:
+            return
+        logging.debug('Joined a shared chat')
+        for buddy in self.shared_activity.get_joined_buddies():
+            self._buddy_already_exists(buddy)
+        self._setup()
+        # request maze data
+        self.broadcast_msg('req_maze')
+
+    def _setup(self):
+        self.text_channel = TextChannelWrapper(
+            self.shared_activity.telepathy_text_chan,
+            self.shared_activity.telepathy_conn, self.pservice)
+        self.text_channel.set_received_callback(self._received_cb)
+        self.shared_activity.connect('buddy-joined', self._buddy_joined_cb)
+        self.shared_activity.connect('buddy-left', self._buddy_left_cb)
+
+    def _received_cb(self, buddy, text):
+        if buddy == self.owner:
+            return
+        self.game.msg_received(buddy, text)
+
+    def _add_alert(self, title, text=None):
+        self._alert = ErrorAlert()
+        self._alert.props.title = title
+        self._alert.props.msg = text
+        self.add_alert(self._alert)
+        self._alert.connect('response', self._alert_cancel_cb)
+        self._alert.show()
+
+    def _alert_cancel_cb(self, alert, response_id):
+        self.remove_alert(alert)
+        self._alert = None
+
+    def update_alert(self, title, text=None):
+        if self._alert is not None:
+            self._alert.props.title = title
+            self._alert.props.msg = text
+
+    def _buddy_joined_cb(self, activity, buddy):
+        """Show a buddy who joined"""
+        logging.debug('buddy joined')
+        if buddy == self.owner:
+            logging.debug('its me, exit!')
+            return
+        self.game.buddy_joined(buddy)
+
+    def _buddy_left_cb(self, activity, buddy):
+        self.game.buddy_left(buddy)
+
+    def _buddy_already_exists(self, buddy):
+        """Show a buddy already in the chat."""
+        if buddy == self.owner:
+            return
+        self.game.buddy_joined(buddy)
+
+    def broadcast_msg(self, message):
+        if self.text_channel:
+            # FIXME: can't identify the sender at the other end,
+            # add the pubkey to the text message
+            self.text_channel.send('%s|%s' % (self.my_key, message))
 
     def write_file(self, file_path):
         logging.debug('Saving the state of the game...')
