@@ -6,6 +6,26 @@ from gi.repository import GObject
 GObject.threads_init()
 
 
+class Accelerometer():
+
+    ACCELEROMETER_DEVICE = '/sys/devices/platform/lis3lv02d/position'
+
+    def read():
+        """
+        return x, y, z values or None if no accelerometer is available
+        """
+        try:
+            fh = open(ACCELEROMETER_DEVICE)
+            string = fh.read()
+            xyz = string[1:-2].split(',')
+            x = float(xyz[0]) / (64 * 18)
+            y = float(xyz[1]) / (64 * 18)
+            z = float(xyz[2]) / (64 * 18)
+            fh.close()
+            return x, y, z
+        except:
+            return None
+
 class EbookModeDetector(GObject.GObject):
 
     EBOOK_DEVICE = '/dev/input/event4'
