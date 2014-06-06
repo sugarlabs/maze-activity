@@ -81,7 +81,7 @@ class Player:
         self.previous = (1, 1)
         self.elapsed = None
 
-    def animate(self, maze):
+    def animate(self, maze, change_direction=True):
         # if the player finished the maze, then don't move
         if maze.map[self.position[0]][self.position[1]] == maze.GOAL:
             self.direction = (0, 0)
@@ -89,7 +89,8 @@ class Player:
             return self.position
         if self.canGo(self.direction, maze):
             self.move(self.direction, maze)
-            self.keepGoing(self.direction, maze)
+            if change_direction:
+                self.keepGoing(self.direction, maze)
         else:
             self.direction = (0, 0)
         return self.position

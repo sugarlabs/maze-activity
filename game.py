@@ -39,6 +39,7 @@ presenceService = presenceservice.get_instance()
 
 from maze import Maze, Rectangle
 from player import Player
+import sensors
 
 
 class MazeGame(Gtk.DrawingArea):
@@ -126,6 +127,14 @@ class MazeGame(Gtk.DrawingArea):
             Gdk.EventMask.TOUCH_MASK)
         self.set_can_focus(True)
         self.grab_focus()
+        self._ebook_mode_detector = sensors.EbookModeDetector()
+        self._accelerometer = sensors.Accelerometer()
+        self._read_accelerator_id = None
+        if self._ebook_mode_detector.get_ebook_mode():
+            self._read_accelerator_id = GObject.timeout_add(
+                200, self._read_accelerometer)
+        self._ebook_mode_detector.connect('changed',
+                                          self._ebook_mode_changed_cb)
 
     def __configure_cb(self, event):
         ''' Screen size has changed '''
@@ -292,6 +301,54 @@ class MazeGame(Gtk.DrawingArea):
     def markPointDirty(self, pt):
         """Mark a single point that needs to be redrawn."""
         self.dirtyPoints.append(pt)
+
+    def _ebook_mode_changed_cb(self, detector, ebook_mode):
+        if ebook_mode:
+            if self._read_accelerator_id is None:
+                self._read_accelerator_id = GObject.timeout_add(
+                    200, self._read_accelerometer)
+        else:
+            self._read_accelerator_id = None
+
+    def _read_accelerometer(self):
+        x, y, z = self._accelerometer.read_position()
+        logging.error('read_acceleromter %s', (x, y, z))
+        TRIGGER = 150
+        if abs(x) < TRIGGER:
+            x = 0
+        if abs(y) < TRIGGER:
+            y = 0
+
+        player = self.localplayers[0]
+        player.hidden = False
+        if x > 0:
+            # RIGHT
+            player.direction = (1, 0)
+        if x < 0:
+            # LEFT
+            player.direction = (-1, 0)
+        if y < 0:
+            # UP
+            player.direction = (0, -1)
+        if y > 0:
+            # DOWN
+            player.direction = (0, 1)
+        if x == 0 and y == 0:
+            player.direction = (0, 0)
+
+        oldposition = player.position
+        newposition = player.animate(self.maze, False)
+        if oldposition != newposition:
+            self.markPointDirty(oldposition)
+            self.markPointDirty(newposition)
+            if player in self.localplayers:
+                self.maze.map[player.previous[0]][player.previous[1]] = \
+                    self.maze.SEEN
+                if self.maze.map[newposition[0]][newposition[1]] == \
+                        self.maze.GOAL:
+                    self.finish(player)
+            self.queue_draw()
+        return self._read_accelerator_id is not None
 
     def __event_cb(self, widget, event):
 
