@@ -10,21 +10,19 @@ class Accelerometer():
 
     ACCELEROMETER_DEVICE = '/sys/devices/platform/lis3lv02d/position'
 
-    def read():
+    def read_position(self):
         """
         return x, y, z values or None if no accelerometer is available
         """
         try:
-            fh = open(ACCELEROMETER_DEVICE)
+            fh = open(self.ACCELEROMETER_DEVICE)
             string = fh.read()
             xyz = string[1:-2].split(',')
-            x = float(xyz[0]) / (64 * 18)
-            y = float(xyz[1]) / (64 * 18)
-            z = float(xyz[2]) / (64 * 18)
             fh.close()
-            return x, y, z
+            return int(xyz[0]), int(xyz[1]), int(xyz[2])
         except:
-            return None
+            return 0, 0, 0
+
 
 class EbookModeDetector(GObject.GObject):
 
@@ -42,11 +40,13 @@ class EbookModeDetector(GObject.GObject):
         return self._ebook_mode
 
     def _get_initial_value(self):
-        output = subprocess.call(['evtest', '--query', self.EBOOK_DEVICE,
-                                  'EV_SW', 'SW_TABLET_MODE'])
-        # 10 is ebook_mode, 0 is normal
-        return (output == 10)
-        logging.error('Initial state %s', (output == 10))
+        try:
+            output = subprocess.call(['evtest', '--query', self.EBOOK_DEVICE,
+                                      'EV_SW', 'SW_TABLET_MODE'])
+            # 10 is ebook_mode, 0 is normal
+            return (output == 10)
+        except:
+            return False
 
     def _start_reading(self):
         thread = threading.Thread(target=self._read)
@@ -65,7 +65,7 @@ class EbookModeDetector(GObject.GObject):
         # restart
         GObject.idle_add(self._start_reading)
 
-# Move to tests
+# TODO: Move to tests
 
 import logging
 from gi.repository import Gtk
