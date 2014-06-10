@@ -88,6 +88,7 @@ class MazeGame(Gtk.DrawingArea):
 
         logging.debug('Starting the game with: %s', state)
         self.maze = Maze(**state)
+        self._ebook_mode_detector = sensors.EbookModeDetector()
         self.reset()
 
         self.frame = 0
@@ -127,12 +128,10 @@ class MazeGame(Gtk.DrawingArea):
             Gdk.EventMask.TOUCH_MASK)
         self.set_can_focus(True)
         self.grab_focus()
-        self._ebook_mode_detector = sensors.EbookModeDetector()
         self._accelerometer = sensors.Accelerometer()
         self._read_accelerator_id = None
         if self._ebook_mode_detector.get_ebook_mode():
-            self._read_accelerator_id = GObject.timeout_add(
-                200, self._read_accelerometer)
+            self._start_accelerometer()
         self._ebook_mode_detector.connect('changed',
                                           self._ebook_mode_changed_cb)
 
@@ -179,6 +178,8 @@ class MazeGame(Gtk.DrawingArea):
         # self.screen.fill((0, 0, 0))
         self.queue_draw()
         self.mouse_in_use = 0
+        if self._ebook_mode_detector.get_ebook_mode():
+            self._start_accelerometer()
 
     def __draw_cb(self, widget, ctx):
         """Draw the current state of the game.
@@ -305,15 +306,14 @@ class MazeGame(Gtk.DrawingArea):
     def _ebook_mode_changed_cb(self, detector, ebook_mode):
         if ebook_mode:
             if self._read_accelerator_id is None:
-                self._read_accelerator_id = GObject.timeout_add(
-                    200, self._read_accelerometer)
+                self._start_accelerometer()
         else:
             self._read_accelerator_id = None
 
     def _read_accelerometer(self):
         x, y, z = self._accelerometer.read_position()
         logging.error('read_acceleromter %s', (x, y, z))
-        TRIGGER = 150
+        TRIGGER = 100
         if abs(x) < TRIGGER:
             x = 0
         if abs(y) < TRIGGER:
@@ -321,18 +321,22 @@ class MazeGame(Gtk.DrawingArea):
 
         player = self.localplayers[0]
         player.hidden = False
-        if x > 0:
-            # RIGHT
-            player.direction = (1, 0)
-        if x < 0:
-            # LEFT
-            player.direction = (-1, 0)
-        if y < 0:
-            # UP
-            player.direction = (0, -1)
-        if y > 0:
-            # DOWN
-            player.direction = (0, 1)
+        if abs(x) > abs(y):
+            if x > 0:
+                # RIGHT
+                player.direction = (1, 0)
+            if x < 0:
+                # LEFT
+                player.direction = (-1, 0)
+            value = abs(x)
+        else:
+            if y < 0:
+                # UP
+                player.direction = (0, -1)
+            if y > 0:
+                # DOWN
+                player.direction = (0, 1)
+            value = abs(y)
         if x == 0 and y == 0:
             player.direction = (0, 0)
 
@@ -348,7 +352,19 @@ class MazeGame(Gtk.DrawingArea):
                         self.maze.GOAL:
                     self.finish(player)
             self.queue_draw()
-        return self._read_accelerator_id is not None
+
+        if self._ebook_mode_detector.get_ebook_mode() and \
+                player.elapsed is None:
+            next_read = 200 - int(100 * (float(value - TRIGGER) / 500))
+            if next_read < 20:
+                next_read = 20
+            self._start_accelerometer(delay=next_read)
+
+        return False
+
+    def _start_accelerometer(self, delay=200):
+        self._read_accelerator_id = GObject.timeout_add(
+            delay, self._read_accelerometer)
 
     def __event_cb(self, widget, event):
 
