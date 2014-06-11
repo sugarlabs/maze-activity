@@ -312,7 +312,9 @@ class MazeGame(Gtk.DrawingArea):
 
     def _read_accelerometer(self):
         x, y, z = self._accelerometer.read_position()
-        logging.error('read_acceleromter %s', (x, y, z))
+
+        debug_msg = "x %s, y %s, z %s | " % (x, y, z)
+
         TRIGGER = 100
         if abs(x) < TRIGGER:
             x = 0
@@ -340,6 +342,8 @@ class MazeGame(Gtk.DrawingArea):
         if x == 0 and y == 0:
             player.direction = (0, 0)
 
+        debug_msg = debug_msg + "direction %s %s | " % (player.direction)
+
         oldposition = player.position
         newposition = player.animate(self.maze, False)
         if oldposition != newposition:
@@ -359,6 +363,10 @@ class MazeGame(Gtk.DrawingArea):
             if next_read < 20:
                 next_read = 20
             self._start_accelerometer(delay=next_read)
+
+            debug_msg = debug_msg + "next_read %s" % next_read
+
+        logging.error('debug_msg %s', debug_msg)
 
         return False
 
