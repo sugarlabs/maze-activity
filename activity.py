@@ -13,6 +13,7 @@ from sugar3.graphics.toolbarbox import ToolbarBox
 from sugar3.graphics.toolbutton import ToolButton
 from sugar3.graphics.toggletoolbutton import ToggleToolButton
 from sugar3.graphics.alert import ErrorAlert
+from sugar3.graphics.alert import NotifyAlert
 from sugar3 import profile
 from gettext import gettext as _
 
@@ -156,6 +157,14 @@ class MazeActivity(activity.Activity):
         if self._alert is not None:
             self._alert.props.title = title
             self._alert.props.msg = text
+
+    def show_accelerator_alert(self):
+        self._alert = NotifyAlert()
+        self._alert.props.title = _('Tablet mode detected.')
+        self._alert.props.msg = _('Hold your XO flat and tilt to play!')
+        self.add_alert(self._alert)
+        self._alert.connect('response', self._alert_cancel_cb)
+        self._alert.show()
 
     def _buddy_joined_cb(self, activity, buddy):
         """Show a buddy who joined"""

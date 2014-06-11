@@ -132,6 +132,7 @@ class MazeGame(Gtk.DrawingArea):
         self._accelerometer = sensors.Accelerometer()
         self._read_accelerator_id = None
         if self._ebook_mode_detector.get_ebook_mode():
+            self._activity.show_accelerator_alert()
             self._start_accelerometer()
         self._ebook_mode_detector.connect('changed',
                                           self._ebook_mode_changed_cb)
@@ -313,6 +314,7 @@ class MazeGame(Gtk.DrawingArea):
 
     def _ebook_mode_changed_cb(self, detector, ebook_mode):
         if ebook_mode:
+            self._activity.show_accelerator_alert()
             if self._read_accelerator_id is None:
                 self._start_accelerometer()
         else:
