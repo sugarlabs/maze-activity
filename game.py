@@ -31,9 +31,13 @@ from gi.repository import Gtk
 from gi.repository import GObject
 
 import logging
+from gettext import gettext as _
 
 from sugar3.presence import presenceservice
-from sugar3.graphics.style import GRID_CELL_SIZE
+from sugar3.graphics import style
+from sugar3.graphics.icon import Icon
+from sugar3.graphics.xocolor import XoColor
+from sugar3.graphics.toolbutton import ToolButton
 
 presenceService = presenceservice.get_instance()
 
@@ -89,12 +93,11 @@ class MazeGame(Gtk.DrawingArea):
         logging.debug('Starting the game with: %s', state)
         self.maze = Maze(**state)
         self._ebook_mode_detector = sensors.EbookModeDetector()
+        self._finish_window = None
         self.reset()
 
         self.frame = 0
         self._show_trail = True
-
-        # self.font = pygame.font.Font(None, 30)
 
         # support arrow keys, game pad arrows and game pad buttons
         # each set maps to a local player index and a direction
@@ -140,7 +143,7 @@ class MazeGame(Gtk.DrawingArea):
     def __configure_cb(self, event):
         ''' Screen size has changed '''
         width = Gdk.Screen.get_default().width()
-        height = Gdk.Screen.get_default().height() - GRID_CELL_SIZE
+        height = Gdk.Screen.get_default().height() - style.GRID_CELL_SIZE
         self.aspectRatio = width / height
 
         if width < height:
@@ -182,6 +185,9 @@ class MazeGame(Gtk.DrawingArea):
         self.mouse_in_use = 0
         if self._ebook_mode_detector.get_ebook_mode():
             self._start_accelerometer()
+        if self._finish_window is not None:
+            self._finish_window.destroy()
+            self._finish_window = None
 
     def __draw_cb(self, widget, ctx):
         """Draw the current state of the game.
@@ -258,37 +264,6 @@ class MazeGame(Gtk.DrawingArea):
         for player in self.allplayers:
             if not player.hidden:
                 player.draw(ctx, self.bounds, self.tileSize)
-
-        finishedPlayers = filter(lambda p: p.elapsed is not None,
-                                 self.allplayers)
-        finishedPlayers.sort(lambda a, b: cmp(a.elapsed, b.elapsed))
-        y = 20
-        x = 20
-        box_border = 3
-        ctx.set_font_size(25)
-        for player in finishedPlayers:
-            text = "%3.2f - %s" % (player.elapsed, player.nick)
-            ctx.save()
-            xbearing, ybearing, text_width, text_height, xadv, yadv = \
-                ctx.text_extents(text)
-            ctx.rectangle(x - box_border, y - box_border,
-                          text_width + box_border * 2,
-                          text_height + box_border * 2)
-            ctx.set_source_rgba(*player.bg.get_rgba())
-            ctx.set_line_width(2)
-            ctx.fill_preserve()
-            ctx.set_source_rgba(*player.fg.get_rgba())
-            ctx.stroke()
-            ctx.restore()
-
-            ctx.save()
-            ctx.set_source_rgb(0, 0, 0)
-            ctx.move_to(x, y + text_height)
-            ctx.show_text(text)
-            ctx.stroke()
-            ctx.restore()
-
-            x += text_width + 20
 
         # clear the dirty rect so nothing will be drawn until there is a change
         # TODO
@@ -595,7 +570,9 @@ class MazeGame(Gtk.DrawingArea):
             # someone finished the maze
             elapsed = message[7:]
             player.elapsed = float(elapsed)
-            self.queue_draw()
+
+            self.show_finish_window()
+
         else:
             # it was something I don't recognize...
             logging.debug("Message from %s: %s", player.nick, message)
@@ -642,3 +619,111 @@ class MazeGame(Gtk.DrawingArea):
         self.queue_draw()
         if len(self.remoteplayers) > 0:
             self._activity.broadcast_msg("finish:%.2f" % player.elapsed)
+
+        self.show_finish_window()
+
+    def show_finish_window(self):
+        all_finished = True
+        for player in self.allplayers:
+            if not player.hidden and player.elapsed is None:
+                all_finished = False
+
+        if all_finished:
+            parent_xid = self.get_toplevel().get_window()
+            self._finish_window = FinishWindow(self, parent_xid)
+
+
+class FinishWindow(Gtk.Window):
+
+    def __init__(self, game, parent_xid):
+        Gtk.Window.__init__(self)
+        self._game = game
+        self._parent_window_xid = parent_xid
+
+        self.set_border_width(style.LINE_WIDTH)
+        self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
+        self.set_decorated(False)
+        self.set_resizable(False)
+        self.connect('realize', self.__realize_cb)
+
+        grid = Gtk.Grid()
+        grid.set_row_spacing(0)
+        grid.set_border_width(style.DEFAULT_SPACING)
+        grid.set_orientation(Gtk.Orientation.VERTICAL)
+        title = Gtk.Label()
+
+        title_font_size = style.FONT_SIZE * 3.5
+        text_font_size = style.FONT_SIZE * 2.5
+
+        title.set_markup('<span font="%d" color="white">%s</span>' %
+                         (title_font_size, _('Maze solved!')))
+        grid.add(title)
+
+        players_grid = Gtk.Grid()
+        players_grid.set_column_spacing(style.DEFAULT_PADDING * 3)
+        players_grid.set_row_spacing(style.DEFAULT_PADDING)
+        players_grid.set_border_width(style.DEFAULT_SPACING)
+        row = 0
+        all_players = self._game.allplayers
+        all_players.sort(lambda a, b: cmp(a.elapsed, b.elapsed))
+        for player in all_players:
+            if not player.hidden:
+                players_grid.attach(
+                    Icon(icon_name='stopwatch',
+                         pixel_size=style.MEDIUM_ICON_SIZE,
+                         xo_color=XoColor(player.buddy.props.color)),
+                    0, row, 1, 1)
+
+                time = Gtk.Label()
+                time.set_markup('<span font="%d" color="%s">%3.2f</span>' %
+                                (text_font_size, player.fg.get_html(),
+                                 player.elapsed))
+                players_grid.attach(time, 1, row, 1, 1)
+
+                name = Gtk.Label()
+                name.set_markup('<span font="%d" color="%s">%s</span>' %
+                                (text_font_size, player.fg.get_html(),
+                                 player.nick))
+                players_grid.attach(name, 2, row, 1, 1)
+                row += 1
+
+        grid.add(players_grid)
+
+        ask = Gtk.Label()
+        ask.set_markup('<span font="%d" color="white">%s</span>' %
+                       (text_font_size, _('Play again?')))
+        grid.add(ask)
+
+        buttons_grid = Gtk.Grid()
+        buttons_grid.set_row_spacing(0)
+        buttons_grid.set_border_width(style.DEFAULT_SPACING)
+        buttons_grid.set_orientation(Gtk.Orientation.HORIZONTAL)
+
+        easier_button = ToolButton('create-easier')
+        easier_button.connect('clicked', self._easier_button_cb)
+        buttons_grid.add(easier_button)
+
+        harder_button = ToolButton('create-harder')
+        harder_button.connect('clicked', self._harder_button_cb)
+        buttons_grid.add(harder_button)
+        buttons_grid.set_halign(Gtk.Align.CENTER)
+        grid.add(buttons_grid)
+
+        self.add(grid)
+
+        self.modify_bg(Gtk.StateType.NORMAL,
+                       style.COLOR_TOOLBAR_GREY.get_gdk_color())
+
+        self.show_all()
+
+    def __realize_cb(self, widget):
+        self.get_window().set_type_hint(Gdk.WindowTypeHint.DIALOG)
+        self.get_window().set_accept_focus(True)
+        self.get_window().set_decorations(Gdk.WMDecoration.BORDER)
+        self.get_window().set_transient_for(self._parent_window_xid)
+
+    def _easier_button_cb(self, button):
+        self._game.easier()
+
+    def _harder_button_cb(self, button):
+        self._game.harder()
