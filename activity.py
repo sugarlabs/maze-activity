@@ -11,6 +11,7 @@ from sugar3.activity.widgets import ActivityToolbarButton
 from sugar3.activity.widgets import StopButton
 from sugar3.graphics.toolbarbox import ToolbarBox
 from sugar3.graphics.toolbutton import ToolButton
+from sugar3.graphics.toggletoolbutton import ToggleToolButton
 from sugar3.graphics.alert import ErrorAlert
 from sugar3 import profile
 from gettext import gettext as _
@@ -76,6 +77,16 @@ class MazeActivity(activity.Activity):
         toolbar_box.toolbar.insert(harder_button, -1)
 
         separator = Gtk.SeparatorToolItem()
+        toolbar_box.toolbar.insert(separator, -1)
+        separator.show()
+
+        show_trail_button = ToggleToolButton('show-trail')
+        show_trail_button.set_tooltip(_('Show trail'))
+        show_trail_button.set_active(True)
+        show_trail_button.connect('toggled', self._toggled_show_trail_cb)
+        toolbar_box.toolbar.insert(show_trail_button, -1)
+
+        separator = Gtk.SeparatorToolItem()
         separator.props.draw = False
         separator.set_size_request(0, -1)
         separator.set_expand(True)
@@ -96,6 +107,9 @@ class MazeActivity(activity.Activity):
 
     def _harder_button_cb(self, button):
         self.game.harder()
+
+    def _toggled_show_trail_cb(self, button):
+        self.game.set_show_trail(button.get_active())
 
     def _shared_cb(self, activity):
         logging.debug('Maze was shared')

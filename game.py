@@ -92,6 +92,7 @@ class MazeGame(Gtk.DrawingArea):
         self.reset()
 
         self.frame = 0
+        self._show_trail = True
 
         # self.font = pygame.font.Font(None, 30)
 
@@ -222,12 +223,15 @@ class MazeGame(Gtk.DrawingArea):
             ctx.rectangle(*rect.get_bounds())
             ctx.fill()
 
-            if tile == self.maze.SEEN:
-                ctx.set_source_rgb(*self.TRAIL_COLOR)
-                radius = self.tileSize / 2 - self.outline
-                center = self.tileSize / 2
-                ctx.arc(rect.x + center, rect.y + center, radius, 0, 2 * pi)
-                ctx.fill()
+            if self._show_trail:
+                if tile == self.maze.SEEN:
+                    ctx.set_source_rgb(*self.TRAIL_COLOR)
+                    radius = self.tileSize / 3 - self.outline
+                    center = self.tileSize / 2
+                    ctx.set_source_rgba(*self.localplayers[0].bg.get_rgba())
+                    ctx.arc(rect.x + center, rect.y + center, radius, 0,
+                            2 * pi)
+                    ctx.fill()
             ctx.restore()
 
         # re-draw the dirty rectangle
@@ -289,6 +293,10 @@ class MazeGame(Gtk.DrawingArea):
         # TODO
         # self.dirtyRect = None
         # self.dirtyPoints = []
+
+    def set_show_trail(self, show_trail):
+        self._show_trail = show_trail
+        self.queue_draw()
 
     def markRectDirty(self, rect):
         """Mark an area that needs to be redrawn.  This lets us
