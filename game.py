@@ -33,13 +33,10 @@ from gi.repository import GObject
 import logging
 from gettext import gettext as _
 
-from sugar3.presence import presenceservice
 from sugar3.graphics import style
 from sugar3.graphics.icon import Icon
 from sugar3.graphics.xocolor import XoColor
 from sugar3.graphics.toolbutton import ToolButton
-
-presenceService = presenceservice.get_instance()
 
 from maze import Maze, Rectangle
 from player import Player
@@ -57,7 +54,7 @@ class MazeGame(Gtk.DrawingArea):
     GOAL_COLOR = (0x00, 0xff, 0x00)
     WIN_COLOR = (0xff, 0xff, 0x00)
 
-    def __init__(self, activity, state=None):
+    def __init__(self, activity, owner, state=None):
         super(MazeGame, self).__init__()
         # note what time it was when we first launched
         self.game_start_time = time.time()
@@ -65,12 +62,11 @@ class MazeGame(Gtk.DrawingArea):
         # the activity is used to communicate with other players
         self._activity = activity
 
-        xoOwner = presenceService.get_owner()
         # keep a list of all local players
         self.localplayers = []
 
         # start with just one player
-        player = Player(xoOwner)
+        player = Player(owner)
         self.localplayers.append(player)
         # plus some bonus players (all hidden to start with)
         self.localplayers.extend(player.bonusPlayers())
