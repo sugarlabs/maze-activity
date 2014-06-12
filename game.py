@@ -271,8 +271,12 @@ class MazeGame(Gtk.DrawingArea):
         # self.dirtyPoints = []
 
     def set_show_trail(self, show_trail):
-        self._show_trail = show_trail
-        self.queue_draw()
+        if self._show_trail != show_trail:
+            self._show_trail = show_trail
+            self.queue_draw()
+            return True
+        else:
+            return False
 
     def markRectDirty(self, rect):
         """Mark an area that needs to be redrawn.  This lets us
@@ -523,6 +527,8 @@ class MazeGame(Gtk.DrawingArea):
             step: x, y, dx, dy
                 A player move using the accelerator, move a single step
 
+            show_trail: True/False
+
             finish: elapsed
                 A player has finished the maze
         """
@@ -575,7 +581,9 @@ class MazeGame(Gtk.DrawingArea):
             player.elapsed = float(elapsed)
 
             self.show_finish_window()
-
+        elif message.startswith("show_trail:"):
+            show_trail = message.endswith('True')
+            self._activity.show_trail_button.set_active(show_trail)
         else:
             # it was something I don't recognize...
             logging.debug("Message from %s: %s", player.nick, message)

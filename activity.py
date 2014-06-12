@@ -81,11 +81,11 @@ class MazeActivity(activity.Activity):
         toolbar_box.toolbar.insert(separator, -1)
         separator.show()
 
-        show_trail_button = ToggleToolButton('show-trail')
-        show_trail_button.set_tooltip(_('Show trail'))
-        show_trail_button.set_active(True)
-        show_trail_button.connect('toggled', self._toggled_show_trail_cb)
-        toolbar_box.toolbar.insert(show_trail_button, -1)
+        self.show_trail_button = ToggleToolButton('show-trail')
+        self.show_trail_button.set_tooltip(_('Show trail'))
+        self.show_trail_button.set_active(True)
+        self.show_trail_button.connect('toggled', self._toggled_show_trail_cb)
+        toolbar_box.toolbar.insert(self.show_trail_button, -1)
 
         separator = Gtk.SeparatorToolItem()
         separator.props.draw = False
@@ -110,7 +110,8 @@ class MazeActivity(activity.Activity):
         self.game.harder()
 
     def _toggled_show_trail_cb(self, button):
-        self.game.set_show_trail(button.get_active())
+        if self.game.set_show_trail(button.get_active()):
+            self.broadcast_msg('show_trail:%s' % str(button.get_active()))
 
     def _shared_cb(self, activity):
         logging.debug('Maze was shared')
