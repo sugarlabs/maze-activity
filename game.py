@@ -234,10 +234,13 @@ class MazeGame(Gtk.DrawingArea):
             for y in range(0, self.maze.height):
                 drawPoint(x, y)
 
+        main_player = self.localplayers[0]
         # draw all players
         for player in self.allplayers:
-            if not player.hidden:
+            if not player.hidden and player != main_player:
                 player.draw(ctx, self.bounds, self.tileSize)
+        # draw last the main player
+        main_player.draw(ctx, self.bounds, self.tileSize)
 
     def set_show_trail(self, show_trail):
         if self._show_trail != show_trail:
