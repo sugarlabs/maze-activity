@@ -329,18 +329,7 @@ class MazeGame(Gtk.DrawingArea):
 
         debug_msg = debug_msg + "direction %s %s | " % (player.direction)
 
-        oldposition = player.position
-        newposition = player.animate(self.maze, False)
-        if oldposition != newposition:
-            self.markPointDirty(oldposition)
-            self.markPointDirty(newposition)
-            if player in self.localplayers:
-                self.maze.map[player.previous[0]][player.previous[1]] = \
-                    self.maze.SEEN
-                if self.maze.map[newposition[0]][newposition[1]] == \
-                        self.maze.GOAL:
-                    self.finish(player)
-            self.queue_draw()
+        self.player_walk(player, False)
 
         if self._ebook_mode_detector.get_ebook_mode() and \
                 player.elapsed is None:
@@ -401,10 +390,9 @@ class MazeGame(Gtk.DrawingArea):
 
                     if len(self.remoteplayers) > 0:
                         self._activity.broadcast_msg(
-                            "move:%s,%d,%d,%d,%d" %
-                            (player.nick, player.position[0],
-                             player.position[1], player.direction[0],
-                             player.direction[1]))
+                            "move:%d,%d,%d,%d" %
+                            (player.position[0], player.position[1],
+                             player.direction[0], player.direction[1]))
                     self.player_walk(player)
 
     def key_press_cb(self, widget, event):
@@ -434,9 +422,9 @@ class MazeGame(Gtk.DrawingArea):
                         player.direction[0], player.direction[1]))
             self.player_walk(player)
 
-    def player_walk(self, player):
+    def player_walk(self, player, change_direction=True):
         oldposition = player.position
-        newposition = player.animate(self.maze)
+        newposition = player.animate(self.maze, change_direction)
         if oldposition != newposition:
             self.markPointDirty(oldposition)
             self.markPointDirty(newposition)
@@ -447,13 +435,16 @@ class MazeGame(Gtk.DrawingArea):
                         self.maze.GOAL:
                     self.finish(player)
             self.queue_draw()
-            GObject.timeout_add(100, self.player_walk, player)
-        """
-        finish_delay = min(2 * len(self.allplayers), 6)
-        if self.finish_time is not None and \
-           time.time() > self.finish_time + finish_delay:
-            self.harder()
-        """
+            if change_direction:
+                GObject.timeout_add(100, self.player_walk, player)
+            else:
+                # if we have peers and the player is the main local player
+                if len(self.remoteplayers) > 0 and \
+                        player == self.localplayers[0]:
+                    self._activity.broadcast_msg(
+                        "step:%d,%d,%d,%d" %
+                        (player.position[0], player.position[1],
+                         player.direction[0], player.direction[1]))
 
     def buddy_joined(self, buddy):
         if buddy:
@@ -529,6 +520,9 @@ class MazeGame(Gtk.DrawingArea):
             move: x, y, dx, dy
                 A player's at x, y is now moving in direction dx, dy
 
+            step: x, y, dx, dy
+                A player move using the accelerator, move a single step
+
             finish: elapsed
                 A player has finished the maze
         """
@@ -548,6 +542,15 @@ class MazeGame(Gtk.DrawingArea):
             player.direction = (int(dx), int(dy))
             self.markPointDirty(player.position)
             self.player_walk(player)
+        elif message.startswith("step:"):
+            # a player has moved using the accelerometer
+            x, y, dx, dy = message[5:].split(",")[:5]
+
+            self.markPointDirty(player.position)
+            player.position = (int(x), int(y))
+            player.direction = (int(dx), int(dy))
+            self.markPointDirty(player.position)
+            self.player_walk(player, False)
         elif message.startswith("maze:"):
             # someone has a different maze than us
             self._activity.update_alert('Connected', 'Maze shared!')
