@@ -84,8 +84,12 @@ class MazeGame(Gtk.DrawingArea):
                      'width': int(9 * self.aspectRatio),
                      'height': 9}
 
+        if 'finish_time' in state and state['finish_time'] is not None:
+            # the maze was alread played, reset it to start a new one
+            state['seed'] = int(time.time())
+
         logging.debug('Starting the game with: %s', state)
-        self.maze = Maze(**state)
+        self.maze = Maze(state['seed'], state['width'], state['height'])
         self._ebook_mode_detector = sensors.EbookModeDetector()
         self._finish_window = None
         self.reset()
