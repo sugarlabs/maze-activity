@@ -50,9 +50,7 @@ class MazeGame(Gtk.DrawingArea):
     # Munsell color values http://wiki.laptop.org/go/Munsell
     EMPTY_COLOR = (203.0 / 255.0, 203.0 / 255.0, 203.0 / 255.0)
     SOLID_COLOR = (28.0 / 255.0, 28.0 / 255.0,  28.0 / 255.0)
-    TRAIL_COLOR = (1.0, 1.0, 1.0)
     GOAL_COLOR = (0x00, 0xff, 0x00)
-    WIN_COLOR = (0xff, 0xff, 0x00)
 
     def __init__(self, activity, owner, state=None):
         super(MazeGame, self).__init__()
@@ -217,7 +215,6 @@ class MazeGame(Gtk.DrawingArea):
 
             if self._show_trail:
                 if tile == self.maze.SEEN:
-                    ctx.set_source_rgb(*self.TRAIL_COLOR)
                     radius = self.tileSize / 3 - self.outline
                     center = self.tileSize / 2
                     ctx.set_source_rgba(*self.localplayers[0].bg.get_rgba())
