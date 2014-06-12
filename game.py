@@ -627,9 +627,16 @@ class FinishWindow(Gtk.Window):
                     0, row, 1, 1)
 
                 time = Gtk.Label()
-                time.set_markup('<span font="%d" color="%s">%3.2f</span>' %
+                if player.elapsed > 60:
+                    minutes = int(player.elapsed / 60)
+                    seconds = player.elapsed - minutes * 60
+                    elapsed = "%d:%2.2f" % (minutes, seconds)
+                else:
+                    elapsed = "%3.2f" % player.elapsed
+
+                time.set_markup('<span font="%d" color="%s">%s</span>' %
                                 (text_font_size, player.fg.get_html(),
-                                 player.elapsed))
+                                 elapsed))
                 players_grid.attach(time, 1, row, 1, 1)
 
                 name = Gtk.Label()
