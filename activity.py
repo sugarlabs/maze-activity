@@ -29,16 +29,16 @@ class MazeActivity(activity.Activity):
 
         self.build_toolbar()
 
+        self.pservice = PresenceService()
+        self.owner = self.pservice.get_owner()
+
         state = None
         if 'state' in self.metadata:
             state = json.loads(self.metadata['state'])
-        self.game = game.MazeGame(self, state)
+        self.game = game.MazeGame(self, self.owner, state)
         self.set_canvas(self.game)
         self.game.show()
         self.connect("key_press_event", self.game.key_press_cb)
-
-        self.pservice = PresenceService()
-        self.owner = self.pservice.get_owner()
 
         self.text_channel = None
         self.my_key = profile.get_pubkey()
