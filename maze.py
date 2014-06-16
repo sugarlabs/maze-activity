@@ -63,7 +63,7 @@ class Maze:
         starty = self.generator.randrange(1, height, 2)
         self.dig(startx, starty)
         for row in self.map:
-            logging.error(row)
+            logging.debug(row)
 
     def _check_point_in_rectangle(self, rectangle, x, y):
         if x < rectangle.x or y < rectangle.y:

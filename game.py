@@ -299,7 +299,7 @@ class MazeGame(Gtk.DrawingArea):
 
             debug_msg = debug_msg + "next_read %s" % next_read
 
-        logging.error('debug_msg %s', debug_msg)
+        logging.debug('accelerometer read %s', debug_msg)
 
         return False
 
