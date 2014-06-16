@@ -648,6 +648,7 @@ class FinishWindow(Gtk.Window):
                 name.set_markup('<span font="%d" color="%s">%s</span>' %
                                 (text_font_size, player.fg.get_html(),
                                  player.nick))
+                name.set_halign(Gtk.Align.START)
                 players_grid.attach(name, 2, row, 1, 1)
                 row += 1
 
