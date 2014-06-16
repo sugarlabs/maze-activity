@@ -293,9 +293,10 @@ class MazeGame(Gtk.DrawingArea):
 
         if self._ebook_mode_detector.get_ebook_mode() and \
                 player.elapsed is None:
+            # next_read depend on inclination
             next_read = 200 - int(100 * (float(value - TRIGGER) / 500))
-            if next_read < 20:
-                next_read = 20
+            # minimal time is 50 ms
+            next_read = max(50, next_read)
             self._start_accelerometer(delay=next_read)
 
             debug_msg = debug_msg + "next_read %s" % next_read
