@@ -199,5 +199,9 @@ class MazeActivity(activity.Activity):
         logging.debug('Saving data: %s', data)
         self.metadata['state'] = json.dumps(data)
 
+    def can_close(self):
+        self.game.close_finish_window()
+        return True
+
     def read_file(self, file_path):
         pass

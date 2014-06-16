@@ -178,9 +178,7 @@ class MazeGame(Gtk.DrawingArea):
         self.mouse_in_use = 0
         if self._ebook_mode_detector.get_ebook_mode():
             self._start_accelerometer()
-        if self._finish_window is not None:
-            self._finish_window.destroy()
-            self._finish_window = None
+        self.close_finish_window()
 
     def __draw_cb(self, widget, ctx):
         # compute the size of the tiles given the screen size, etc.
@@ -588,6 +586,11 @@ class MazeGame(Gtk.DrawingArea):
         if all_finished:
             parent_xid = self.get_toplevel().get_window()
             self._finish_window = FinishWindow(self, parent_xid)
+
+    def close_finish_window(self):
+        if self._finish_window is not None:
+            self._finish_window.destroy()
+            self._finish_window = None
 
 
 class FinishWindow(Gtk.Window):
