@@ -609,8 +609,8 @@ class FinishWindow(Gtk.Window):
         grid.set_orientation(Gtk.Orientation.VERTICAL)
         title = Gtk.Label()
 
-        title_font_size = style.FONT_SIZE * 3.5
-        text_font_size = style.FONT_SIZE * 2.5
+        title_font_size = style.FONT_SIZE * 3
+        text_font_size = style.FONT_SIZE * 2
 
         title.set_markup('<span font="%d" color="white">%s</span>' %
                          (title_font_size, _('Maze solved!')))
