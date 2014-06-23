@@ -29,6 +29,7 @@ from math import pi
 from gi.repository import Gdk
 from gi.repository import Gtk
 from gi.repository import GObject
+import cairo
 
 import logging
 from gettext import gettext as _
@@ -96,6 +97,7 @@ class MazeGame(Gtk.DrawingArea):
 
         self.frame = 0
         self._show_trail = True
+        self._cached_surface = None
 
         # support arrow keys, game pad arrows and game pad buttons
         # each set maps to a local player index and a direction
@@ -171,14 +173,11 @@ class MazeGame(Gtk.DrawingArea):
         self.finish_time = None
         for player in self.allplayers:
             player.reset()
-        self.dirtyRect = self.maze.bounds
-        self.dirtyPoints = []
+        self._dirty_rect = self.maze.bounds
+        self._dirty_points = []
         self.maze.map[self.maze.width - 2][self.maze.height - 2] = \
             self.maze.GOAL
 
-        # clear and mark the whole screen as dirty
-        # TODO
-        # self.screen.fill((0, 0, 0))
         self.queue_draw()
         self.mouse_in_use = 0
         if self._ebook_mode_detector.get_ebook_mode():
@@ -188,16 +187,9 @@ class MazeGame(Gtk.DrawingArea):
     def __draw_cb(self, widget, ctx):
         """Draw the current state of the game.
         This makes use of the dirty rectangle to reduce CPU load."""
-        # TODO
-        # if self.dirtyRect is None and len(self.dirtyPoints) == 0:
-        #    return
 
         # compute the size of the tiles given the screen size, etc.
         allocation = self.get_allocation()
-
-        ctx.rectangle(0, 0, allocation.width, allocation.height)
-        ctx.set_source_rgb(*self.SOLID_COLOR)
-        ctx.fill()
 
         self.tileSize = min(allocation.width / self.maze.width,
                             allocation.height / self.maze.height)
@@ -208,6 +200,17 @@ class MazeGame(Gtk.DrawingArea):
                                 self.tileSize * self.maze.width,
                                 self.tileSize * self.maze.height)
         self.outline = int(self.tileSize / 5)
+
+        if self._cached_surface is None:
+            self._cached_surface = ctx.get_target().create_similar(
+                cairo.CONTENT_COLOR_ALPHA, allocation.width, allocation.height)
+            self._ctx = cairo.Context(self._cached_surface)
+
+        if self._dirty_rect is None and len(self._dirty_points) == 0:
+            logging.error('DRAW NOTHING')
+            ctx.set_source_surface(self._cached_surface)
+            ctx.paint()
+            return
 
         def drawPoint(x, y):
             rect = Rectangle(self.bounds.x + x * self.tileSize,
@@ -221,30 +224,40 @@ class MazeGame(Gtk.DrawingArea):
                 background_color = self.SOLID_COLOR
             elif tile == self.maze.GOAL:
                 background_color = self.GOAL_COLOR
-            ctx.save()
-            ctx.set_source_rgb(*background_color)
-            ctx.rectangle(*rect.get_bounds())
-            ctx.fill()
+            self._ctx.save()
+            self._ctx.set_source_rgb(*background_color)
+            self._ctx.rectangle(*rect.get_bounds())
+            self._ctx.fill()
 
             if self._show_trail:
                 if tile == self.maze.SEEN:
                     radius = self.tileSize / 3 - self.outline
                     center = self.tileSize / 2
-                    ctx.set_source_rgba(*self.localplayers[0].bg.get_rgba())
-                    ctx.arc(rect.x + center, rect.y + center, radius, 0,
-                            2 * pi)
-                    ctx.fill()
-            ctx.restore()
+                    self._ctx.set_source_rgba(
+                        *self.localplayers[0].bg.get_rgba())
+                    self._ctx.arc(rect.x + center, rect.y + center, radius, 0,
+                                  2 * pi)
+                    self._ctx.fill()
+            self._ctx.restore()
 
         # re-draw the dirty rectangle
-        if self.dirtyRect is not None:
+        if self._dirty_rect is not None:
+            logging.error('dirty_rect is not None')
+
+            # background
+            self._ctx.save()
+            self._ctx.rectangle(0, 0, allocation.width, allocation.height)
+            self._ctx.set_source_rgb(*self.SOLID_COLOR)
+            self._ctx.fill()
+            self._ctx.restore()
+
             # compute the area that needs to be redrawn
-            left = max(0, self.dirtyRect.x)
+            left = max(0, self._dirty_rect.x)
             right = min(self.maze.width,
-                        self.dirtyRect.x + self.dirtyRect.width)
-            top = max(0, self.dirtyRect.y)
+                        self._dirty_rect.x + self._dirty_rect.width)
+            top = max(0, self._dirty_rect.y)
             bottom = min(self.maze.height,
-                         self.dirtyRect.y + self.dirtyRect.height)
+                         self._dirty_rect.y + self._dirty_rect.height)
 
             # loop over the dirty rect and draw
             for x in range(left, right):
@@ -252,42 +265,37 @@ class MazeGame(Gtk.DrawingArea):
                     drawPoint(x, y)
 
         # re-draw the dirty points
-        # for x, y in self.dirtyPoints:
-        #    drawPoint(x, y)
+        for x, y in self._dirty_points:
+            logging.error('draw_point %s %s', x, y)
+            drawPoint(x, y)
 
         main_player = self.localplayers[0]
         # draw all players
         for player in self.allplayers:
             if not player.hidden and player != main_player:
-                player.draw(ctx, self.bounds, self.tileSize)
+                player.draw(self._ctx, self.bounds, self.tileSize)
         # draw last the main player
-        main_player.draw(ctx, self.bounds, self.tileSize)
+        main_player.draw(self._ctx, self.bounds, self.tileSize)
+
+        ctx.set_source_surface(self._cached_surface)
+        ctx.paint()
 
         # clear the dirty rect so nothing will be drawn until there is a change
-        # TODO
-        # self.dirtyRect = None
-        # self.dirtyPoints = []
+        self._dirty_rect = None
+        self._dirty_points = []
 
     def set_show_trail(self, show_trail):
         if self._show_trail != show_trail:
             self._show_trail = show_trail
+            self._dirty_rect = self.maze.bounds
             self.queue_draw()
             return True
         else:
             return False
 
-    def markRectDirty(self, rect):
-        """Mark an area that needs to be redrawn.  This lets us
-        play really big mazes without needing to re-draw the whole
-        thing each frame."""
-        if self.dirtyRect is None:
-            self.dirtyRect = rect
-        else:
-            self.dirtyRect.union_ip(rect)
-
-    def markPointDirty(self, pt):
+    def _mark_point_dirty(self, pt):
         """Mark a single point that needs to be redrawn."""
-        self.dirtyPoints.append(pt)
+        self._dirty_points.append(pt)
 
     def _ebook_mode_changed_cb(self, detector, ebook_mode):
         if ebook_mode:
@@ -429,8 +437,8 @@ class MazeGame(Gtk.DrawingArea):
         oldposition = player.position
         newposition = player.animate(self.maze, change_direction)
         if oldposition != newposition:
-            self.markPointDirty(oldposition)
-            self.markPointDirty(newposition)
+            self._mark_point_dirty(oldposition)
+            self._mark_point_dirty(newposition)
             if player in self.localplayers:
                 self.maze.map[player.previous[0]][player.previous[1]] = \
                     self.maze.SEEN
@@ -458,7 +466,7 @@ class MazeGame(Gtk.DrawingArea):
             self.remoteplayers[buddy.get_key()] = player
             self.allplayers.append(player)
             self.allplayers.extend(player.bonusPlayers())
-            self.markPointDirty(player.position)
+            self._mark_point_dirty(player.position)
 
     def _send_maze(self, player):
         # tell them which maze we are playing, so they can sync up
@@ -478,10 +486,10 @@ class MazeGame(Gtk.DrawingArea):
         if buddy.get_key() in self.remoteplayers:
             player = self.remoteplayers[buddy.get_key()]
             logging.debug("Leave: %s", player.nick)
-            self.markPointDirty(player.position)
+            self._mark_point_dirty(player.position)
             self.allplayers.remove(player)
             for bonusplayer in player.bonusPlayers():
-                self.markPointDirty(bonusplayer.position)
+                self._mark_point_dirty(bonusplayer.position)
                 self.allplayers.remove(bonusplayer)
             del self.remoteplayers[buddy.get_key()]
 
@@ -542,19 +550,19 @@ class MazeGame(Gtk.DrawingArea):
             # a player has moved
             x, y, dx, dy = message[5:].split(",")[:5]
 
-            self.markPointDirty(player.position)
+            self._mark_point_dirty(player.position)
             player.position = (int(x), int(y))
             player.direction = (int(dx), int(dy))
-            self.markPointDirty(player.position)
+            self._mark_point_dirty(player.position)
             self.player_walk(player)
         elif message.startswith("step:"):
             # a player has moved using the accelerometer
             x, y, dx, dy = message[5:].split(",")[:5]
 
-            self.markPointDirty(player.position)
+            self._mark_point_dirty(player.position)
             player.position = (int(x), int(y))
             player.direction = (int(dx), int(dy))
-            self.markPointDirty(player.position)
+            self._mark_point_dirty(player.position)
             self.player_walk(player, False)
         elif message.startswith("maze:"):
             # someone has a different maze than us
