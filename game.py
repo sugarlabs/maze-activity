@@ -120,6 +120,7 @@ class MazeGame(Gtk.DrawingArea):
         Gdk.Screen.get_default().connect('size-changed',
                                          self.__configure_cb)
         self.connect('draw', self.__draw_cb)
+        self.connect('size-allocate', self.__size_allocate_cb)
         self.connect('event', self.__event_cb)
 
         self.set_events(
@@ -173,10 +174,12 @@ class MazeGame(Gtk.DrawingArea):
         self.finish_time = None
         for player in self.allplayers:
             player.reset()
-        self._dirty_rect = self.maze.bounds
         self._dirty_points = []
         self.maze.map[self.maze.width - 2][self.maze.height - 2] = \
             self.maze.GOAL
+
+        # force size recalcuation
+        self._recalculate_sizes(self.get_allocation())
 
         self.queue_draw()
         self.mouse_in_use = 0
@@ -184,26 +187,32 @@ class MazeGame(Gtk.DrawingArea):
             self._start_accelerometer()
         self.close_finish_window()
 
-    def __draw_cb(self, widget, ctx):
-        """Draw the current state of the game.
-        This makes use of the dirty rectangle to reduce CPU load."""
+    def __size_allocate_cb(self, widget, allocation):
+        self._recalculate_sizes(allocation)
 
+    def _recalculate_sizes(self, allocation):
+        self._width = allocation.width
+        self._height = allocation.height
         # compute the size of the tiles given the screen size, etc.
-        allocation = self.get_allocation()
-
-        self.tileSize = min(allocation.width / self.maze.width,
-                            allocation.height / self.maze.height)
-        self.bounds = Rectangle((allocation.width - self.tileSize *
+        self.tileSize = min(self._width / self.maze.width,
+                            self._height / self.maze.height)
+        self.bounds = Rectangle((self._width - self.tileSize *
                                  self.maze.width) / 2,
-                                (allocation.height - self.tileSize *
+                                (self._height - self.tileSize *
                                  self.maze.height) / 2,
                                 self.tileSize * self.maze.width,
                                 self.tileSize * self.maze.height)
         self.outline = int(self.tileSize / 5)
+        self._cached_surface = None
+        self._dirty_rect = self.maze.bounds
+
+    def __draw_cb(self, widget, ctx):
+        """Draw the current state of the game.
+        This makes use of the dirty rectangle to reduce CPU load."""
 
         if self._cached_surface is None:
             self._cached_surface = ctx.get_target().create_similar(
-                cairo.CONTENT_COLOR_ALPHA, allocation.width, allocation.height)
+                cairo.CONTENT_COLOR_ALPHA, self._width, self._height)
             self._ctx = cairo.Context(self._cached_surface)
 
         if self._dirty_rect is None and len(self._dirty_points) == 0:
@@ -246,7 +255,7 @@ class MazeGame(Gtk.DrawingArea):
 
             # background
             self._ctx.save()
-            self._ctx.rectangle(0, 0, allocation.width, allocation.height)
+            self._ctx.rectangle(0, 0, self._width, self._height)
             self._ctx.set_source_rgb(*self.SOLID_COLOR)
             self._ctx.fill()
             self._ctx.restore()
