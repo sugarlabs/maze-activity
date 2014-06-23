@@ -605,6 +605,8 @@ class MazeGame(Gtk.DrawingArea):
         """Make a new maze that is harder than the current one."""
         # both width and height must be odd
         newHeight = self.maze.height + 2
+        if newHeight > 125:
+            newHeight = 125
         newWidth = int(newHeight * self.aspectRatio)
         if newWidth % 2 == 0:
             newWidth -= 1
@@ -623,6 +625,8 @@ class MazeGame(Gtk.DrawingArea):
         """Make a new maze that is easier than the current one."""
         # both width and height must be odd
         newHeight = max(self.maze.height - 2, 5)
+        if newHeight < 9:
+            newHeight = 9
         newWidth = int(newHeight * self.aspectRatio)
         if newWidth % 2 == 0:
             newWidth -= 1
