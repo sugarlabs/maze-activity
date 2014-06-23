@@ -216,7 +216,6 @@ class MazeGame(Gtk.DrawingArea):
             self._ctx = cairo.Context(self._cached_surface)
 
         if self._dirty_rect is None and len(self._dirty_points) == 0:
-            logging.error('DRAW NOTHING')
             ctx.set_source_surface(self._cached_surface)
             ctx.paint()
             return
@@ -251,7 +250,6 @@ class MazeGame(Gtk.DrawingArea):
 
         # re-draw the dirty rectangle
         if self._dirty_rect is not None:
-            logging.error('dirty_rect is not None')
 
             # background
             self._ctx.save()
@@ -275,7 +273,6 @@ class MazeGame(Gtk.DrawingArea):
 
         # re-draw the dirty points
         for x, y in self._dirty_points:
-            logging.error('draw_point %s %s', x, y)
             drawPoint(x, y)
 
         main_player = self.localplayers[0]
