@@ -80,6 +80,8 @@ class Player:
         self.position = (1, 1)
         self.previous = (1, 1)
         self.elapsed = None
+        if self.shape != 'circle':
+            self.hidden = True
 
     def animate(self, maze, change_direction=True):
         # if the player finished the maze, then don't move
