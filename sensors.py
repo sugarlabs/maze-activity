@@ -50,16 +50,14 @@ class EbookModeDetector(GObject.GObject):
 
     def _start_reading(self):
         thread = threading.Thread(target=self._read)
-        thread.daemon = True
         thread.start()
 
     def _read(self):
         fd = open(self.EBOOK_DEVICE, 'rb')
         for x in range(12):
             fd.read(1)
-        self._report_change(ord(fd.read(1)))
-
-    def _report_change(self, value):
+        value = ord(fd.read(1))
+        fd.close()
         self._ebook_mode = (value == 1)
         self.emit('changed', self._ebook_mode)
         # restart
