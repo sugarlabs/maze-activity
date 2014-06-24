@@ -306,7 +306,7 @@ class MazeGame(Gtk.DrawingArea):
 
     def _ebook_mode_changed_cb(self, detector, ebook_mode):
         if ebook_mode:
-            self._activity.show_accelerator_alert()
+            GObject.idle_add(self._activity.show_accelerator_alert)
             if self._read_accelerator_id is None:
                 self._start_accelerometer()
         else:
@@ -764,7 +764,7 @@ class FinishWindow(Gtk.Window):
         self.get_window().set_transient_for(self._parent_window_xid)
 
     def _easier_button_cb(self, button):
-        self._game.easier()
+        GObject.idle_add(self._game.easier)
 
     def _harder_button_cb(self, button):
-        self._game.harder()
+        GObject.idle_add(self._game.harder)

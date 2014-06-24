@@ -143,6 +143,7 @@ class MazeActivity(activity.Activity):
         self.game.msg_received(buddy, text)
 
     def _add_alert(self, title, text=None):
+        self.grab_focus()
         self._alert = ErrorAlert()
         self._alert.props.title = title
         self._alert.props.msg = text
@@ -160,6 +161,7 @@ class MazeActivity(activity.Activity):
             self._alert.props.msg = text
 
     def show_accelerator_alert(self):
+        self.grab_focus()
         self._alert = NotifyAlert()
         self._alert.props.title = _('Tablet mode detected.')
         self._alert.props.msg = _('Hold your XO flat and tilt to play!')
