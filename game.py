@@ -186,6 +186,7 @@ class MazeGame(Gtk.DrawingArea):
         if self._ebook_mode_detector.get_ebook_mode():
             self._start_accelerometer()
         self.close_finish_window()
+        self.grab_focus()
 
     def __size_allocate_cb(self, widget, allocation):
         self._recalculate_sizes(allocation)
@@ -759,7 +760,6 @@ class FinishWindow(Gtk.Window):
 
     def __realize_cb(self, widget):
         self.get_window().set_type_hint(Gdk.WindowTypeHint.DIALOG)
-        self.get_window().set_accept_focus(True)
         self.get_window().set_decorations(Gdk.WMDecoration.BORDER)
         self.get_window().set_transient_for(self._parent_window_xid)
 
