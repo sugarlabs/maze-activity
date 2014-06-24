@@ -406,7 +406,8 @@ class MazeGame(Gtk.DrawingArea):
                             # DOWN
                             player.direction = (0, 1)
 
-                    if len(self.remoteplayers) > 0:
+                    if len(self.remoteplayers) > 0 and \
+                            player == self.localplayers[0]:
                         self._activity.broadcast_msg(
                             "move:%d,%d,%d,%d" %
                             (player.position[0], player.position[1],
@@ -433,7 +434,8 @@ class MazeGame(Gtk.DrawingArea):
             elif direction == 'Right':
                 player.direction = (1, 0)
 
-            if len(self.remoteplayers) > 0:
+            if len(self.remoteplayers) > 0 and \
+                    player == self.localplayers[0]:
                 self._activity.broadcast_msg(
                     "move:%d,%d,%d,%d" % (
                         player.position[0], player.position[1],
@@ -481,12 +483,14 @@ class MazeGame(Gtk.DrawingArea):
             "maze:%d,%d,%d,%d" %
             (self.game_running_time(), self.maze.seed, self.maze.width,
              self.maze.height))
-        for player in self.localplayers:
-            if not player.hidden:
-                self._activity.broadcast_msg(
-                    "move:%d,%d,%d,%d" %
-                    (player.position[0], player.position[1],
-                     player.direction[0], player.direction[1]))
+
+        # only the first player collaborate
+        player = self.localplayers[0]
+        if not player.hidden:
+            self._activity.broadcast_msg(
+                "move:%d,%d,%d,%d" %
+                (player.position[0], player.position[1],
+                 player.direction[0], player.direction[1]))
 
     def buddy_left(self, buddy):
         logging.debug('buddy left %s %s', buddy.__class__, dir(buddy))
@@ -646,7 +650,8 @@ class MazeGame(Gtk.DrawingArea):
         self.finish_time = time.time()
         player.elapsed = self.finish_time - self.level_start_time
         self.queue_draw()
-        if len(self.remoteplayers) > 0:
+        if len(self.remoteplayers) > 0 and \
+                player == self.localplayers[0]:
             self._activity.broadcast_msg("finish:%.2f" % player.elapsed)
 
         self.show_finish_window()
