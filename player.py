@@ -38,6 +38,7 @@ class Player:
         colors = buddy.props.color.split(",")
         self.fg = style.Color(colors[0])
         self.bg = style.Color(colors[1])
+        self.victories = 0
 
         # this field is None when the activity is not shared and when
         # the user shared it this field will become to

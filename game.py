@@ -653,6 +653,13 @@ class MazeGame(Gtk.DrawingArea):
         if len(self.remoteplayers) > 0 and \
                 player == self.localplayers[0]:
             self._activity.broadcast_msg("finish:%.2f" % player.elapsed)
+        winner = True
+        for players in self.allplayers:
+            if players.elapsed is not None and player.elapsed > \
+                    players.elapsed:
+                winner = False
+        if winner:
+            player.victories += 1
 
         self.show_finish_window()
 
@@ -732,6 +739,19 @@ class FinishWindow(Gtk.Window):
                                  player.nick))
                 name.set_halign(Gtk.Align.START)
                 players_grid.attach(name, 2, row, 1, 1)
+
+                players_grid.attach(
+                    Icon(icon_name='trophy',
+                         pixel_size=style.MEDIUM_ICON_SIZE,
+                         xo_color=XoColor(player.buddy.props.color)),
+                    3, row, 1, 1)
+
+                points = Gtk.Label()
+                points.set_markup('<span font="%d" color="%s">%d</span>' %
+                                  (text_font_size, player.fg.get_html(),
+                                   player.victories))
+                players_grid.attach(points, 4, row, 1, 1)
+
                 row += 1
 
         grid.add(players_grid)
