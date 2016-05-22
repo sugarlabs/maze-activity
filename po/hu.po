@@ -2,34 +2,35 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2012-04-11 00:31-0400\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2016-02-06 22:28+0000\n"
+"Last-Translator: ursus <sugar.libfrid@antichef.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"Language: hu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Translate Toolkit 1.6.0\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Pootle 2.5.1.1\n"
+"X-POOTLE-MTIME: 1454797722.000000\n"
 
 #: activity/activity.info:2 activity.py:13
 msgid "Maze"
-msgstr ""
+msgstr "Labirintus"
 
 #: activity.py:26
 msgid "Harder level"
-msgstr ""
+msgstr "Nehezebb szint"
 
 #: activity.py:32
 msgid "Easier level"
-msgstr ""
+msgstr "Könnyebb szint"
 
 #: olpcgames/canvas.py:151
 #, python-format
 msgid "%s Source"
-msgstr ""
+msgstr "%s forrás"

@@ -7,15 +7,16 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2012-04-11 00:31-0400\n"
-"PO-Revision-Date: 2011-02-26 14:57+0200\n"
-"Last-Translator: Chris <cjl@laptop.org>\n"
+"PO-Revision-Date: 2016-05-21 22:15+0000\n"
+"Last-Translator: Chris <cjl@sugarlabs.org>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"Language: ko\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Pootle 2.0.1\n"
+"X-Generator: Pootle 2.5.1.1\n"
+"X-POOTLE-MTIME: 1463868902.000000\n"
 
 #: activity/activity.info:2 activity.py:13
 msgid "Maze"
@@ -23,13 +24,13 @@ msgstr "미로"
 
 #: activity.py:26
 msgid "Harder level"
-msgstr ""
+msgstr "더 어려운 단계"
 
 #: activity.py:32
 msgid "Easier level"
-msgstr ""
+msgstr "제일 쉬운 레벨"
 
 #: olpcgames/canvas.py:151
-#, python-format
+#, fuzzy, python-format
 msgid "%s Source"
-msgstr ""
+msgstr "%s 퍼센트 소스"
