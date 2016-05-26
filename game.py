@@ -147,6 +147,7 @@ class MazeGame(Gtk.DrawingArea):
         height = Gdk.Screen.get_default().height() - style.GRID_CELL_SIZE
         self.aspectRatio = width / height
 
+        self._activity.busy()
         if width < height:
             if self.maze.width < self.maze.height:
                 self.maze = Maze(self.maze.seed, self.maze.width,
@@ -161,6 +162,7 @@ class MazeGame(Gtk.DrawingArea):
             else:
                 self.maze = Maze(self.maze.seed, self.maze.height,
                                  self.maze.width)
+        self._activity.unbusy()
         self.reset()
 
     def game_running_time(self, newelapsed=None):
@@ -591,7 +593,9 @@ class MazeGame(Gtk.DrawingArea):
                 # started (before we joined)
                 self.game_start_time = time.time() - running_time
                 # use the new seed
+                self._activity.busy()
                 self.maze = Maze(seed, width, height)
+                self._activity.unbusy()
                 self.reset()
         elif message.startswith("finish:"):
             # someone finished the maze
@@ -615,16 +619,7 @@ class MazeGame(Gtk.DrawingArea):
         newWidth = int(newHeight * self.aspectRatio)
         if newWidth % 2 == 0:
             newWidth -= 1
-        self.maze = Maze(self.maze.seed + 1, newWidth, newHeight)
-        self.reset()
-        # tell everyone which maze we are playing, so they can sync up
-        if len(self.remoteplayers) > 0:
-            # but fudge it a little so that we can be sure they'll use our maze
-            self.game_start_time -= 10
-            self._activity.broadcast_msg(
-                "maze:%d,%d,%d,%d" % (
-                    self.game_running_time(), self.maze.seed,
-                    self.maze.width, self.maze.height))
+        self._restart(newWidth, newHeight)
 
     def easier(self):
         """Make a new maze that is easier than the current one."""
@@ -635,6 +630,10 @@ class MazeGame(Gtk.DrawingArea):
         newWidth = int(newHeight * self.aspectRatio)
         if newWidth % 2 == 0:
             newWidth -= 1
+        self._restart(newWidth, newHeight)
+
+    def _restart(self, newWidth, newHeight):
+        self._activity.busy()
         self.maze = Maze(self.maze.seed + 1, newWidth, newHeight)
         self.reset()
         # tell everyone which maze we are playing, so they can sync up
@@ -645,6 +644,7 @@ class MazeGame(Gtk.DrawingArea):
                 "maze:%d,%d,%d,%d" % (
                     self.game_running_time(),
                     self.maze.seed, self.maze.width, self.maze.height))
+        self._activity.unbusy()
 
     def finish(self, player):
         self.finish_time = time.time()
