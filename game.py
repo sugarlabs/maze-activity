@@ -798,3 +798,6 @@ class FinishWindow(Gtk.Window):
     def __key_press_event_cb(self, window, event):
         if event.keyval == Gdk.KEY_Escape:
             GObject.idle_add(self._game.close_finish_window)
+        elif event.keyval == Gdk.KEY_q and \
+            event.state & Gdk.ModifierType.CONTROL_MASK != 0:
+            self._game._activity.close()
