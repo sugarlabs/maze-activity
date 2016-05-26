@@ -31,7 +31,7 @@ from maze import Rectangle
 
 
 class Player:
-    def __init__(self, buddy, shape='circle'):
+    def __init__(self, buddy, look='centre'):
         self.buddy = buddy
         name = buddy.props.nick.decode('utf-8')
         self.nick = unicodedata.normalize('NFC', name)
@@ -45,35 +45,73 @@ class Player:
         # "olpcgames.mesh.my_handle()"
         self.uid = None
 
-        self.shape = shape
+        self.look = look
         self.hidden = False
         self.bonusplayers = None
         self.reset()
 
     def draw(self, ctx, bounds, size):
-        line_width = size / 10.
+        line_width = size / 32.
         rect = Rectangle(bounds.x + self.position[0] * size,
                          bounds.y + self.position[1] * size, size,
                          size)
-        ctx.save()
-        if self.shape == 'circle':
-            ctx.arc(rect.x + size / 2, rect.y + size / 2,
-                    (size / 2 - line_width), 0, 2 * math.pi)
-        elif self.shape == 'square':
-            ctx.rectangle(rect.x + line_width, rect.y + line_width,
-                          size - line_width * 2, size - line_width * 2)
-        elif self.shape == 'triangle':
-            ctx.new_path()
-            ctx.move_to(rect.x + line_width, rect.y + size - line_width)
-            ctx.line_to(rect.x + size / 2, rect.y + line_width)
-            ctx.line_to(rect.x + size - line_width, rect.y + size - line_width)
-            ctx.close_path()
 
-        ctx.set_source_rgba(*self.bg.get_rgba())
+        ctx.save()
+
+        # centre of face
+        cx = rect.x + size / 2
+        cy = rect.y + size / 2
+
+        bg = {
+            'centre': self.bg.get_rgba(),
+            'left': [0.45, 0.45, 0.45, 1.],
+            'right': [0.55, 0.55, 0.55, 1.]
+        }
+        fg = {
+            'centre': self.fg.get_rgba(),
+            'left': [1., 1., 1., 1.],
+            'right': [0., 0., 0., 1.]
+        }
+
+        # a background filled circle with foreground border
+        ctx.arc(cx, cy, (size / 2 - line_width), 0, 2 * math.pi)
+        ctx.set_source_rgba(*bg[self.look])
         ctx.set_line_width(line_width)
         ctx.fill_preserve()
-        ctx.set_source_rgba(*self.fg.get_rgba())
+        ctx.set_source_rgba(*fg[self.look])
         ctx.stroke()
+
+        # two eyes
+        for ex in [cx - 0.20 * size, cx + 0.20 * size]:
+            # conjunctiva
+            er = 0.14 * size
+            ey = cy - 0.05 * size
+            ctx.arc(ex, ey, er, 0, 2 * math.pi)
+            ctx.set_source_rgba(1., 1., 1., 1.)
+            ctx.fill()
+            # iris, pupil
+            er = 0.04 * size
+            if self.look == 'left':
+                ex -= 0.04 * size
+            elif self.look == 'right':
+                ex += 0.04 * size
+            else:
+                ey += 0.02 * size
+            ctx.arc(ex, ey, er, 0, 2 * math.pi)
+            ctx.set_source_rgba(0., 0., 0., 1.)
+            ctx.fill()
+
+        # mouth
+        (lx, ly) = (cx - 0.25 * size, cy + 0.15 * size)  # left corner
+        (bx, by) = (cx,               cy + 0.25 * size)  # weak control
+        (rx, ry) = (cx + 0.25 * size, cy + 0.15 * size)  # right corner
+        (tx, ty) = (cx,               cy + 0.50 * size)  # strong control
+        ctx.set_source_rgba(1., 1., 1., 1.)
+        ctx.curve_to(lx, ly, bx, by, rx, ry)  # upper lip
+        ctx.curve_to(rx, ry, tx, ty, lx, ly)  # lower lip
+        ctx.fill_preserve()
+        ctx.stroke()
+
         ctx.restore()
 
     def reset(self):
@@ -81,7 +119,7 @@ class Player:
         self.position = (1, 1)
         self.previous = (1, 1)
         self.elapsed = None
-        if self.shape != 'circle':
+        if self.look != 'centre':
             self.hidden = True
 
     def animate(self, maze, change_direction=True):
@@ -138,8 +176,8 @@ class Player:
     def bonusPlayers(self):
         if self.bonusplayers is None:
             self.bonusplayers = []
-            self.bonusplayers.append(Player(self.buddy, 'square'))
-            self.bonusplayers.append(Player(self.buddy, 'triangle'))
+            self.bonusplayers.append(Player(self.buddy, 'left'))
+            self.bonusplayers.append(Player(self.buddy, 'right'))
 
             count = 1
             for player in self.bonusplayers:
