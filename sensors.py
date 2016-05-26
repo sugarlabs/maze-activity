@@ -33,6 +33,12 @@ class EbookModeDetector(GObject.GObject):
 
     def __init__(self):
         GObject.GObject.__init__(self)
+        self._ebook_mode = False
+        try:
+            fd = open(self.EBOOK_DEVICE, 'rb')
+        except IOError:
+            return
+        fd.close()
         self._ebook_mode = self._get_initial_value()
         self._start_reading()
 
