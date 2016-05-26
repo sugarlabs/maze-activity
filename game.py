@@ -479,13 +479,15 @@ class MazeGame(Gtk.DrawingArea):
             self.allplayers.extend(player.bonusPlayers())
             self._mark_point_dirty(player.position)
 
-    def _send_maze(self, player):
-        # tell them which maze we are playing, so they can sync up
+    def _send_maze(self):
         self._activity.broadcast_msg(
             "maze:%d,%d,%d,%d" %
             (self.game_running_time(), self.maze.seed, self.maze.width,
              self.maze.height))
 
+    def _handle_req_maze(self, player):
+        # tell them which maze we are playing, so they can sync up
+        self._send_maze()
         # only the first player collaborate
         player = self.localplayers[0]
         if not player.hidden:
@@ -535,6 +537,9 @@ class MazeGame(Gtk.DrawingArea):
 
             The valid messages are:
 
+            req_maze
+                Request to please send me the maze.  Reply is maze:.
+
             maze: running_time, seed, width, height
                 A player has a differen maze.
                 The one that has been running the longest will force all other
@@ -558,7 +563,7 @@ class MazeGame(Gtk.DrawingArea):
         if player in self.localplayers:
             return
         if message == "req_maze":
-            self._send_maze(player)
+            self._handle_req_maze(player)
         elif message.startswith("move:"):
             # a player has moved
             x, y, dx, dy = message[5:].split(",")[:5]
@@ -640,10 +645,7 @@ class MazeGame(Gtk.DrawingArea):
         if len(self.remoteplayers) > 0:
             # but fudge it a little so that we can be sure they'll use our maze
             self.game_start_time -= 10
-            self._activity.broadcast_msg(
-                "maze:%d,%d,%d,%d" % (
-                    self.game_running_time(),
-                    self.maze.seed, self.maze.width, self.maze.height))
+            self._send_maze()
         self._activity.unbusy()
 
     def finish(self, player):
