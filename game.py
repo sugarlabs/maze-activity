@@ -691,6 +691,7 @@ class FinishWindow(Gtk.Window):
         self.set_decorated(False)
         self.set_resizable(False)
         self.connect('realize', self.__realize_cb)
+        self.connect('key-press-event', self.__key_press_event_cb)
 
         grid = Gtk.Grid()
         grid.set_row_spacing(0)
@@ -793,3 +794,7 @@ class FinishWindow(Gtk.Window):
 
     def _harder_button_cb(self, button):
         GObject.idle_add(self._game.harder)
+
+    def __key_press_event_cb(self, window, event):
+        if event.keyval == Gdk.KEY_Escape:
+            GObject.idle_add(self._game.close_finish_window)
