@@ -3,6 +3,8 @@
 import logging
 import json
 
+from gi.repository import GObject
+from gi.repository import Gdk
 from gi.repository import Gtk
 
 from sugar3.activity import activity
@@ -26,6 +28,8 @@ class MazeActivity(activity.Activity):
     def __init__(self, handle):
         """Set up the Maze activity."""
         activity.Activity.__init__(self, handle)
+        self._busy_count = 0
+        self._unbusy_idle_sid = None
 
         self.build_toolbar()
 
@@ -54,6 +58,28 @@ class MazeActivity(activity.Activity):
         else:
             # we are creating the activity
             self.connect('shared', self._shared_cb)
+
+    def busy(self):
+        if self._busy_count == 0:
+            if self._unbusy_idle_sid is not None:
+                GObject.source_remove(self._unbusy_idle_sid)
+                self._unbusy_idle_sid = None
+            self._old_cursor = self.get_window().get_cursor()
+            self._set_cursor(Gdk.Cursor.new(Gdk.CursorType.WATCH))
+        self._busy_count += 1
+
+    def unbusy(self):
+        self._unbusy_idle_sid = GObject.idle_add(self._unbusy_idle_cb)
+
+    def _unbusy_idle_cb(self):
+        self._unbusy_idle_sid = None
+        self._busy_count -= 1
+        if self._busy_count == 0:
+            self._set_cursor(self._old_cursor)
+
+    def _set_cursor(self, cursor):
+        self.get_window().set_cursor(cursor)
+        Gdk.flush()
 
     def build_toolbar(self):
         """Build our Activity toolbar for the Sugar system."""
