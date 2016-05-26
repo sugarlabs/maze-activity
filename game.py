@@ -629,9 +629,7 @@ class MazeGame(Gtk.DrawingArea):
     def easier(self):
         """Make a new maze that is easier than the current one."""
         # both width and height must be odd
-        newHeight = max(self.maze.height - 2, 5)
-        if newHeight < 9:
-            newHeight = 9
+        newHeight = max(self.maze.height - 2, 9)
         newWidth = int(newHeight * self.aspectRatio)
         if newWidth % 2 == 0:
             newWidth -= 1
