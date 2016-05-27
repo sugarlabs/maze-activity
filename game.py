@@ -413,10 +413,7 @@ class MazeGame(Gtk.DrawingArea):
 
                     if len(self.remoteplayers) > 0 and \
                             player == self.localplayers[0]:
-                        self._activity.broadcast_msg(
-                            "move:%d,%d,%d,%d" %
-                            (player.position[0], player.position[1],
-                             player.direction[0], player.direction[1]))
+                        self._send_move(player)
                     self.player_walk(player)
 
     def key_press_cb(self, widget, event):
@@ -443,10 +440,7 @@ class MazeGame(Gtk.DrawingArea):
 
             if len(self.remoteplayers) > 0 and \
                     player == self.localplayers[0]:
-                self._activity.broadcast_msg(
-                    "move:%d,%d,%d,%d" % (
-                        player.position[0], player.position[1],
-                        player.direction[0], player.direction[1]))
+                self._send_move(player)
             self.player_walk(player)
 
     def player_walk(self, player, change_direction=True):
@@ -484,6 +478,12 @@ class MazeGame(Gtk.DrawingArea):
             self.allplayers.extend(player.bonusPlayers())
             self._mark_point_dirty(player.position)
 
+    def _send_move(self, player):
+        self._activity.broadcast_msg(
+            "move:%d,%d,%d,%d" %
+            (player.position[0], player.position[1],
+             player.direction[0], player.direction[1]))
+
     def _send_maze(self):
         self._activity.broadcast_msg(
             "maze:%d,%d,%d,%d" %
@@ -496,10 +496,7 @@ class MazeGame(Gtk.DrawingArea):
         # only the first player collaborate
         player = self.localplayers[0]
         if not player.hidden:
-            self._activity.broadcast_msg(
-                "move:%d,%d,%d,%d" %
-                (player.position[0], player.position[1],
-                 player.direction[0], player.direction[1]))
+            self._send_move(player)
 
     def buddy_left(self, buddy):
         logging.debug('buddy left %s %s', buddy.__class__, dir(buddy))
