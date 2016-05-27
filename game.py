@@ -417,6 +417,8 @@ class MazeGame(Gtk.DrawingArea):
                     self.player_walk(player)
 
     def key_press_cb(self, widget, event):
+        if type(widget.get_toplevel().get_focus()) == Gtk.Entry:
+            return False
         key_name = Gdk.keyval_name(event.keyval)
         if key_name in ('plus', 'equal'):
             self.harder()
