@@ -150,18 +150,21 @@ class MazeGame(Gtk.DrawingArea):
         self._activity.busy()
         if width < height:
             if self.maze.width < self.maze.height:
-                self.maze = Maze(self.maze.seed, self.maze.width,
+                self.maze = Maze(self.maze.seed + 1, self.maze.width,
                                  self.maze.height)
             else:
-                self.maze = Maze(self.maze.seed, self.maze.height,
+                self.maze = Maze(self.maze.seed + 1, self.maze.height,
                                  self.maze.width)
         else:
             if self.maze.width > self.maze.height:
-                self.maze = Maze(self.maze.seed, self.maze.width,
+                self.maze = Maze(self.maze.seed + 1, self.maze.width,
                                  self.maze.height)
             else:
-                self.maze = Maze(self.maze.seed, self.maze.height,
+                self.maze = Maze(self.maze.seed + 1, self.maze.height,
                                  self.maze.width)
+        if len(self.remoteplayers) > 0:
+            self.game_start_time -= 10
+            self._send_maze()
         self._activity.unbusy()
         self.reset()
 
