@@ -1,3 +1,19 @@
+27
+
+* show number of games won by every player #3494 (Trinidad),
+* fix repository reference in activity.info (Odiard, Cameron),
+* updated translations (Leonard, Gelonch, et al),
+* busy cursor during maze generation (Cameron),
+* escape key or ctrl+q to dismiss "Maze solved!" window (Cameron),
+* use faces (Cameron),
+* ignore shortcuts when typing journal object name #10764 (Cameron),
+* regenerate on rotate #8993 (Cameron),
+* fix fail to quit on XO-1.75 and XO-4 (Cameron).
+
+26
+
+* unmaintained NEWS file from this point onward, use git history,
+
 14
 *New translations
 
