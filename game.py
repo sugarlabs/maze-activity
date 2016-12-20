@@ -40,7 +40,7 @@ from sugar3.graphics.xocolor import XoColor
 from sugar3.graphics.toolbutton import ToolButton
 
 from maze import Maze, Rectangle
-from player import Player
+from mazeplayer import MazePlayer
 import sensors
 
 
@@ -65,7 +65,7 @@ class MazeGame(Gtk.DrawingArea):
         self.localplayers = []
 
         # start with just one player
-        player = Player(owner)
+        player = MazePlayer(owner)
         self.localplayers.append(player)
         # plus some bonus players (all hidden to start with)
         self.localplayers.extend(player.bonusPlayers())
@@ -471,7 +471,7 @@ class MazeGame(Gtk.DrawingArea):
         if buddy:
             logging.debug("Join: %s - %s", buddy.props.nick,
                           buddy.props.color)
-            player = Player(buddy)
+            player = MazePlayer(buddy)
             player.uid = buddy.get_key()
             self.remoteplayers[buddy.get_key()] = player
             self.allplayers.append(player)

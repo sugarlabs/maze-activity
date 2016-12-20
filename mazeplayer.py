@@ -30,7 +30,7 @@ from sugar3.graphics import style
 from maze import Rectangle
 
 
-class Player:
+class MazePlayer:
     def __init__(self, buddy, look='centre'):
         self.buddy = buddy
         name = buddy.props.nick.decode('utf-8')
@@ -176,8 +176,8 @@ class Player:
     def bonusPlayers(self):
         if self.bonusplayers is None:
             self.bonusplayers = []
-            self.bonusplayers.append(Player(self.buddy, 'left'))
-            self.bonusplayers.append(Player(self.buddy, 'right'))
+            self.bonusplayers.append(MazePlayer(self.buddy, 'left'))
+            self.bonusplayers.append(MazePlayer(self.buddy, 'right'))
 
             count = 1
             for player in self.bonusplayers:
