@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-06-21 12:25+1000\n"
+"POT-Creation-Date: 2017-12-30 10:26+1100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,14 +26,6 @@ msgid ""
 "Good at finding your way out of hard situations? Let's see! Try to make your "
 "way through an increasingly difficult path, or you can also play with a "
 "friend!"
-msgstr ""
-
-#: game.py:708
-msgid "Maze solved!"
-msgstr ""
-
-#: game.py:764
-msgid "Play again?"
 msgstr ""
 
 #: activity.py:57
@@ -70,4 +62,12 @@ msgstr ""
 
 #: activity.py:197
 msgid "Hold your XO flat and tilt to play!"
+msgstr ""
+
+#: game.py:708
+msgid "Maze solved!"
+msgstr ""
+
+#: game.py:764
+msgid "Play again?"
 msgstr ""
