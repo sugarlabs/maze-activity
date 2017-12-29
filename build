@@ -1,7 +1,0 @@
-#!/bin/sh
-
-find Maze.activity/ -name "*.pyc" -exec rm {} \;
-find Maze.activity/ -name ".DS_Store" -exec rm {} \;
-cd Maze.activity
-sweets dist_xo
-
