@@ -103,9 +103,9 @@ class Player:
 
         # mouth
         (lx, ly) = (cx - 0.25 * size, cy + 0.15 * size)  # left corner
-        (bx, by) = (cx,               cy + 0.25 * size)  # weak control
+        (bx, by) = (cx, cy + 0.25 * size)  # weak control
         (rx, ry) = (cx + 0.25 * size, cy + 0.15 * size)  # right corner
-        (tx, ty) = (cx,               cy + 0.50 * size)  # strong control
+        (tx, ty) = (cx, cy + 0.50 * size)  # strong control
         ctx.set_source_rgba(1., 1., 1., 1.)
         ctx.curve_to(lx, ly, bx, by, rx, ry)  # upper lip
         ctx.curve_to(rx, ry, tx, ty, lx, ly)  # lower lip

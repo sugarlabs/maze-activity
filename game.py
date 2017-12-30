@@ -50,7 +50,7 @@ class MazeGame(Gtk.DrawingArea):
 
     # Munsell color values http://wiki.laptop.org/go/Munsell
     EMPTY_COLOR = (203.0 / 255.0, 203.0 / 255.0, 203.0 / 255.0)
-    SOLID_COLOR = (28.0 / 255.0, 28.0 / 255.0,  28.0 / 255.0)
+    SOLID_COLOR = (28.0 / 255.0, 28.0 / 255.0, 28.0 / 255.0)
     GOAL_COLOR = (0x00, 0xff, 0x00)
 
     def __init__(self, activity, owner, state=None):
@@ -801,5 +801,5 @@ class FinishWindow(Gtk.Window):
         if event.keyval == Gdk.KEY_Escape:
             GObject.idle_add(self._game.close_finish_window)
         elif event.keyval == Gdk.KEY_q and \
-            event.state & Gdk.ModifierType.CONTROL_MASK != 0:
+                event.state & Gdk.ModifierType.CONTROL_MASK != 0:
             self._game._activity.close()
