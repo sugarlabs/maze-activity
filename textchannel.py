@@ -1,13 +1,9 @@
 import logging
 
-from telepathy.client import Connection
-from telepathy.interfaces import (
-    CHANNEL_INTERFACE, CHANNEL_INTERFACE_GROUP,
-    CHANNEL_TYPE_TEXT)
-from telepathy.constants import (
-    CHANNEL_GROUP_FLAG_CHANNEL_SPECIFIC_HANDLES,
-    CHANNEL_TEXT_MESSAGE_TYPE_NORMAL)
+import gi
+gi.require_version('TelepathyGLib', '0.12')
 
+from gi.repository import TelepathyGLib
 
 class TextChannelWrapper(object):
     """Wrap a telepathy Text Channel to make
@@ -22,7 +18,7 @@ class TextChannelWrapper(object):
         self._logger = logging.getLogger(
             'minichat-activity.TextChannelWrapper')
         self._signal_matches = []
-        m = self._text_chan[CHANNEL_INTERFACE].\
+        m = self._text_chan[TelepathyGLib.IFACE_CHANNEL].\
             connect_to_signal(
             'Closed', self._closed_cb)
         self._signal_matches.append(m)
@@ -31,14 +27,14 @@ class TextChannelWrapper(object):
         """Send text over the Telepathy text channel."""
         # XXX Implement CHANNEL_TEXT_MESSAGE_TYPE_ACTION
         if self._text_chan is not None:
-            self._text_chan[CHANNEL_TYPE_TEXT].Send(
-                CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, text)
+            self._text_chan[TelepathyGLib.IFACE_CHANNEL_TYPE_TEXT].Send(
+                TelepathyGLib.ChannelTextMessageType.NORMAL, text)
 
     def close(self):
         """Close the text channel."""
         self._logger.debug('Closing text channel')
         try:
-            self._text_chan[CHANNEL_INTERFACE].Close()
+            self._text_chan[TelepathyGLib.IFACE_CHANNEL].Close()
         except:
             self._logger.debug('Channel disappeared!')
             self._closed_cb()
@@ -62,7 +58,7 @@ class TextChannelWrapper(object):
         if self._text_chan is None:
             return
         self._activity_cb = callback
-        m = self._text_chan[CHANNEL_TYPE_TEXT].\
+        m = self._text_chan[TelepathyGLib.IFACE_CHANNEL_TYPE_TEXT].\
             connect_to_signal(
             'Received', self._received_cb)
         self._signal_matches.append(m)
@@ -71,7 +67,7 @@ class TextChannelWrapper(object):
         """Get pending messages and show them as
         received."""
         for id, timestamp, sender, type, flags, text \
-                in self._text_chan[CHANNEL_TYPE_TEXT].ListPendingMessages(
+                in self._text_chan[TelepathyGLib.IFACE_CHANNEL_TYPE_TEXT].ListPendingMessages(
                     False):
             self._received_cb(id, timestamp, sender, type, flags, text)
 
@@ -86,7 +82,7 @@ class TextChannelWrapper(object):
             buddy = self._get_buddy(sender)
             self._activity_cb(buddy, text)
             self._text_chan[
-                CHANNEL_TYPE_TEXT].AcknowledgePendingMessages([id])
+                TelepathyGLib.IFACE_CHANNEL_TYPE_TEXT].AcknowledgePendingMessages([id])
         else:
             self._logger.debug(
                 'Throwing received message on the floor'
@@ -110,13 +106,13 @@ class TextChannelWrapper(object):
         # Get the Telepathy Connection
         tp_name, tp_path = \
             self._pservice.get_preferred_connection()
-        conn = Connection(tp_name, tp_path)
-        group = self._text_chan[CHANNEL_INTERFACE_GROUP]
+        conn = TelepathyGLib.Connection.new(TelepathyGLib.DBusDaemon.dup(), tp_name, tp_path)
+        group = self._text_chan[TelepathyGLib.IFACE_CHANNEL_INTERFACE_GROUP]
         my_csh = group.GetSelfHandle()
         if my_csh == cs_handle:
             handle = conn.GetSelfHandle()
         elif group.GetGroupFlags() & \
-                CHANNEL_GROUP_FLAG_CHANNEL_SPECIFIC_HANDLES:
+                TelepathyGLib.ChannelGroupFlags.CHANNEL_SPECIFIC_HANDLES:
             handle = group.GetHandleOwners([cs_handle])[0]
         else:
             handle = cs_handle
