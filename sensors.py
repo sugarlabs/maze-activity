@@ -35,7 +35,7 @@ class Accelerometer():
             xyz = string[1:-2].split(',')
             fh.close()
             return int(xyz[0]), int(xyz[1]), int(xyz[2])
-        except:
+        except BaseException:
             return 0, 0, 0
 
 
@@ -79,7 +79,7 @@ class EbookModeDetector(GObject.GObject):
                                       'EV_SW', 'SW_TABLET_MODE'])
             # 10 is ebook_mode, 0 is normal
             return (output == 10)
-        except:
+        except BaseException:
             return False
 
 
@@ -116,6 +116,7 @@ def test():
 
     window.show_all()
     Gtk.main()
+
 
 if __name__ == '__main__':
     test()

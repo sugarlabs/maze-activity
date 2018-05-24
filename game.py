@@ -417,7 +417,7 @@ class MazeGame(Gtk.DrawingArea):
                     self.player_walk(player)
 
     def key_press_cb(self, widget, event):
-        if type(widget.get_toplevel().get_focus()) == Gtk.Entry:
+        if isinstance(widget.get_toplevel().get_focus(), Gtk.Entry):
             return False
         key_name = Gdk.keyval_name(event.keyval)
         if key_name in ('plus', 'equal'):
@@ -521,7 +521,7 @@ class MazeGame(Gtk.DrawingArea):
             player = self.remoteplayers[key]
             try:
                 self.handleMessage(player, message)
-            except:
+            except BaseException:
                 logging.error("Error handling message: %s\n%s",
                               message, sys.exc_info())
         else:
