@@ -5,9 +5,11 @@ gi.require_version('TelepathyGLib', '0.12')
 
 from gi.repository import TelepathyGLib
 
+
 class TextChannelWrapper(object):
     """Wrap a telepathy Text Channel to make
     usage simpler."""
+
     def __init__(self, text_chan, conn, pservice):
         """Connect to the text channel"""
         self._activity_cb = None
@@ -35,7 +37,7 @@ class TextChannelWrapper(object):
         self._logger.debug('Closing text channel')
         try:
             self._text_chan[TelepathyGLib.IFACE_CHANNEL].Close()
-        except:
+        except BaseException:
             self._logger.debug('Channel disappeared!')
             self._closed_cb()
 
@@ -106,7 +108,8 @@ class TextChannelWrapper(object):
         # Get the Telepathy Connection
         tp_name, tp_path = \
             self._pservice.get_preferred_connection()
-        conn = TelepathyGLib.Connection.new(TelepathyGLib.DBusDaemon.dup(), tp_name, tp_path)
+        conn = TelepathyGLib.Connection.new(
+            TelepathyGLib.DBusDaemon.dup(), tp_name, tp_path)
         group = self._text_chan[TelepathyGLib.IFACE_CHANNEL_INTERFACE_GROUP]
         my_csh = group.GetSelfHandle()
         if my_csh == cs_handle:
