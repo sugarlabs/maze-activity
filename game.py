@@ -169,7 +169,7 @@ class MazeGame(Gtk.DrawingArea):
         self.reset()
 
     def game_running_time(self, newelapsed=None):
-        return int(time.time() - self.game_start_time)
+        return time.time() - self.game_start_time
 
     def reset(self):
         """Reset the game state.  Everyone starts in the top-left.
@@ -487,7 +487,7 @@ class MazeGame(Gtk.DrawingArea):
     def _send_maze(self):
         self._activity.broadcast_msg(
             "maze:%d,%d,%d,%d" %
-            (self.game_running_time(), self.maze.seed, self.maze.width,
+            (self.game_running_time() * 1e6, self.maze.seed, self.maze.width,
              self.maze.height))
 
     def _handle_req_maze(self, player):
@@ -543,7 +543,7 @@ class MazeGame(Gtk.DrawingArea):
                 Request to please send me the maze.  Reply is maze:.
 
             maze: running_time, seed, width, height
-                A player has a differen maze.
+                A player has a different maze.
                 The one that has been running the longest will force all other
                 players to use that maze.
                 This way new players will join the existing game properly.
@@ -595,6 +595,7 @@ class MazeGame(Gtk.DrawingArea):
             # is that maze older than the one we're already playing?
             # note that we use elapsed time instead of absolute time because
             # people's clocks are often set to something totally wrong
+            running_time = running_time / 1.0e6
             if self.game_running_time() < running_time:
                 # make note of the earlier time that the game really
                 # started (before we joined)
