@@ -81,9 +81,12 @@ class MazeGame(Gtk.DrawingArea):
         # start with a small maze using a seed that will be different
         # each time you play
         if state is None:
+            height = 9
+            width = int(height * self.aspectRatio)
+            if width % 2 == 0:
+                width -= 1
             state = {'seed': int(time.time()),
-                     'width': int(9 * self.aspectRatio),
-                     'height': 9}
+                     'height': height, 'width': width}
 
         if 'finish_time' in state and state['finish_time'] is not None:
             # the maze was alread played, reset it to start a new one
