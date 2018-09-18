@@ -7,7 +7,7 @@ import gi
 gi.require_version('Gdk', '3.0')
 gi.require_version('Gtk', '3.0')
 
-from gi.repository import GObject
+from gi.repository import GLib
 from gi.repository import Gdk
 from gi.repository import Gtk
 
@@ -66,14 +66,14 @@ class MazeActivity(activity.Activity):
     def busy(self):
         if self._busy_count == 0:
             if self._unbusy_idle_sid is not None:
-                GObject.source_remove(self._unbusy_idle_sid)
+                GLib.source_remove(self._unbusy_idle_sid)
                 self._unbusy_idle_sid = None
             self._old_cursor = self.get_window().get_cursor()
             self._set_cursor(Gdk.Cursor.new(Gdk.CursorType.WATCH))
         self._busy_count += 1
 
     def unbusy(self):
-        self._unbusy_idle_sid = GObject.idle_add(self._unbusy_idle_cb)
+        self._unbusy_idle_sid = GLib.idle_add(self._unbusy_idle_cb)
 
     def _unbusy_idle_cb(self):
         self._unbusy_idle_sid = None

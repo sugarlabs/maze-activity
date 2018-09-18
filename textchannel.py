@@ -69,7 +69,9 @@ class TextChannelWrapper(object):
         """Get pending messages and show them as
         received."""
         for id, timestamp, sender, type, flags, text \
-                in self._text_chan[TelepathyGLib.IFACE_CHANNEL_TYPE_TEXT].ListPendingMessages(
+                in self._text_chan[
+                    TelepathyGLib.IFACE_CHANNEL_TYPE_TEXT
+                ].ListPendingMessages(
                     False):
             self._received_cb(id, timestamp, sender, type, flags, text)
 
@@ -84,7 +86,8 @@ class TextChannelWrapper(object):
             buddy = self._get_buddy(sender)
             self._activity_cb(buddy, text)
             self._text_chan[
-                TelepathyGLib.IFACE_CHANNEL_TYPE_TEXT].AcknowledgePendingMessages([id])
+                TelepathyGLib.IFACE_CHANNEL_TYPE_TEXT
+            ].AcknowledgePendingMessages([id])
         else:
             self._logger.debug(
                 'Throwing received message on the floor'
