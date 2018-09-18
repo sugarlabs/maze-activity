@@ -610,10 +610,11 @@ class MazeGame(Gtk.DrawingArea):
                 self.reset()
         elif message.startswith("finish:"):
             # someone finished the maze
+            logging.debug('finish for nick %s (received data)' % (player.nick))
             elapsed = message[7:]
             player.elapsed = float(elapsed)
 
-            self.show_finish_window()
+            self.show_finish_window(player)
         elif message.startswith("show_trail:"):
             show_trail = message.endswith('True')
             self._activity.show_trail_button.set_active(show_trail)
@@ -653,12 +654,21 @@ class MazeGame(Gtk.DrawingArea):
         self._activity.unbusy()
 
     def finish(self, player):
+        logging.debug(
+            'finish for nick %s (locally determined)' % (player.nick))
         self.finish_time = time.time()
         player.elapsed = self.finish_time - self.level_start_time
         self.queue_draw()
         if len(self.remoteplayers) > 0 and \
                 player == self.localplayers[0]:
             self._activity.broadcast_msg("finish:%.2f" % player.elapsed)
+
+        self.show_finish_window(player)
+
+    def show_finish_window(self, player):
+        """ check if the game is over, and if true show the finish window """
+
+        # is this the first player to reach the goal?
         winner = True
         for players in self.allplayers:
             if players.elapsed is not None and player.elapsed > \
@@ -666,10 +676,10 @@ class MazeGame(Gtk.DrawingArea):
                 winner = False
         if winner:
             player.victories += 1
+            logging.debug('victory++ for nick %s now %d' %
+                          (player.nick, player.victories))
 
-        self.show_finish_window()
-
-    def show_finish_window(self):
+        # are all players finished?
         all_finished = True
         for player in self.allplayers:
             if not player.hidden and player.elapsed is None:
