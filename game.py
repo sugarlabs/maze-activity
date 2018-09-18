@@ -26,9 +26,9 @@
 import sys
 import time
 from math import pi
+from gi.repository import GLib
 from gi.repository import Gdk
 from gi.repository import Gtk
-from gi.repository import GObject
 import cairo
 
 import logging
@@ -311,7 +311,7 @@ class MazeGame(Gtk.DrawingArea):
 
     def _ebook_mode_changed_cb(self, detector, ebook_mode):
         if ebook_mode:
-            GObject.idle_add(self._activity.show_accelerator_alert)
+            GLib.idle_add(self._activity.show_accelerator_alert)
             if self._read_accelerator_id is None:
                 self._start_accelerometer()
         else:
@@ -368,7 +368,7 @@ class MazeGame(Gtk.DrawingArea):
         return False
 
     def _start_accelerometer(self, delay=200):
-        self._read_accelerator_id = GObject.timeout_add(
+        self._read_accelerator_id = GLib.timeout_add(
             delay, self._read_accelerometer)
 
     def __event_cb(self, widget, event):
@@ -457,7 +457,7 @@ class MazeGame(Gtk.DrawingArea):
                     self.finish(player)
             self.queue_draw()
             if change_direction:
-                GObject.timeout_add(100, self.player_walk, player)
+                GLib.timeout_add(100, self.player_walk, player)
             else:
                 # if we have peers and the player is the main local player
                 if len(self.remoteplayers) > 0 and \
@@ -793,14 +793,14 @@ class FinishWindow(Gtk.Window):
         self.get_window().set_transient_for(self._parent_window_xid)
 
     def _easier_button_cb(self, button):
-        GObject.idle_add(self._game.easier)
+        GLib.idle_add(self._game.easier)
 
     def _harder_button_cb(self, button):
-        GObject.idle_add(self._game.harder)
+        GLib.idle_add(self._game.harder)
 
     def __key_press_event_cb(self, window, event):
         if event.keyval == Gdk.KEY_Escape:
-            GObject.idle_add(self._game.close_finish_window)
+            GLib.idle_add(self._game.close_finish_window)
         elif event.keyval == Gdk.KEY_q and \
                 event.state & Gdk.ModifierType.CONTROL_MASK != 0:
             self._game._activity.close()

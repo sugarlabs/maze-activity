@@ -17,6 +17,7 @@
 
 import subprocess
 
+from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Gtk
 
@@ -66,7 +67,7 @@ class EbookModeDetector(GObject.GObject):
                     self.emit('changed', self._ebook_mode)
             return True
 
-        self._sid = GObject.io_add_watch(self._fp, GObject.IO_IN, _io_in_cb)
+        self._sid = GLib.io_add_watch(self._fp, GLib.IO_IN, _io_in_cb)
 
         self._ebook_mode = self._get_initial_value()
 
@@ -112,7 +113,7 @@ def test():
 
     accelerometer = Accelerometer()
     _timeout_cb()
-    GObject.timeout_add(100, _timeout_cb)
+    GLib.timeout_add(100, _timeout_cb)
 
     window.show_all()
     Gtk.main()
