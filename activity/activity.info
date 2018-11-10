@@ -1,12 +1,14 @@
 [Activity]
 name = Maze
-exec = sugar-activity activity.MazeActivity
-icon = activity-maze
-activity_version = 28
-host_version = 1
-license = GPLv3+
+activity_version = 28 
 bundle_id = vu.lux.olpc.Maze
+license = GPLv3+
+icon = activity-maze
+exec = sugar-activity activity.MazeActivity
 summary = Good at finding your way out of hard situations? Let's see! Try to make your way through an increasingly difficult path, or you can also play with a friend!
-max_participants = 6
+url = https://activities.sugarlabs.org/en-US/sugar/addon/4071
 repository = https://github.com/sugarlabs/maze-activity
+host_version = 1
+max_participants = 6
 tags = Game
+screenshots = https://github.com/Ashnidh/maze-activity/blob/master/screenshots/en/screenshot1.png https://github.com/Ashnidh/maze-activity/blob/master/screenshots/en/screenshot2.png https://github.com/Ashnidh/maze-activity/blob/master/screenshots/en/screenshot3.png
