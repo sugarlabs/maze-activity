@@ -10,3 +10,10 @@ summary = Good at finding your way out of hard situations? Let's see! Try to mak
 max_participants = 6
 repository = https://github.com/sugarlabs/maze-activity
 tags = Game
+metadata_license = CC0-1.0
+description:
+  <p>Maze activity is a simple game about finding a way out of a maze.</p>
+  <p>You can also play with your friend!</p>
+  <p>With every level the difficulty increases.</p>
+	
+screenshots = https://github.com/sugarlabs/maze-activityscreenshots/en/screenshot1.png https://github.com/sugarlabs/maze-activityscreenshots/en/screenshot2.png https://github.com/sugarlabs/maze-activityscreenshots/en/screenshot3.png
