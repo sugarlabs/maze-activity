@@ -35,15 +35,17 @@ class MazeActivity(activity.Activity):
         self._busy_count = 0
         self._unbusy_idle_sid = None
 
+        if 'state' in self.metadata:
+            self.state = json.loads(self.metadata['state'])
+        else:
+            self.state = None
+
         self.build_toolbar()
 
         self.pservice = PresenceService()
         self.owner = self.pservice.get_owner()
 
-        state = None
-        if 'state' in self.metadata:
-            state = json.loads(self.metadata['state'])
-        self.game = game.MazeGame(self, self.owner, state)
+        self.game = game.MazeGame(self)
         self.set_canvas(self.game)
         self.game.show()
         self.connect("key_press_event", self.game.key_press_cb)
@@ -107,6 +109,13 @@ class MazeActivity(activity.Activity):
         harder_button.connect('clicked', self._harder_button_cb)
         toolbar_box.toolbar.insert(harder_button, -1)
 
+        self._risk_button = ToggleToolButton('make-risk')
+        self._risk_button.set_tooltip(_('Make risk'))
+        if self.state and 'risk' in self.state:
+            self._risk_button.set_active(self.state['risk'])
+        self._risk_button.connect('toggled', self._make_risk_button_cb)
+        toolbar_box.toolbar.insert(self._risk_button, -1)
+
         separator = Gtk.SeparatorToolItem()
         toolbar_box.toolbar.insert(separator, -1)
         separator.show()
@@ -132,6 +141,17 @@ class MazeActivity(activity.Activity):
         toolbar_box.show_all()
 
         return toolbar_box
+
+    def disable_risk(self):
+        self._risk_button.set_sensitive(False)
+
+    def set_risk(self, risk):
+        self._risk_button.disconnect_by_func(self._make_risk_button_cb)
+        self._risk_button.set_active(risk)
+        self._risk_button.connect('toggled', self._make_risk_button_cb)
+
+    def _make_risk_button_cb(self, button):
+        self.game.set_risk(int(button.get_active()))
 
     def _easier_button_cb(self, button):
         self.game.easier()
@@ -227,7 +247,9 @@ class MazeActivity(activity.Activity):
         data = {'seed': self.game.maze.seed,
                 'width': self.game.maze.width,
                 'height': self.game.maze.height,
-                'finish_time': self.game.finish_time}
+                'finish_time': self.game.finish_time,
+                'risk': self.game.maze.risk}
+
         logging.debug('Saving data: %s', data)
         self.metadata['state'] = json.dumps(data)
 

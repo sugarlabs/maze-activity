@@ -1,0 +1,17 @@
+<svg width="580" height="400" xmlns="http://www.w3.org/2000/svg">
+ <!-- Created with Method Draw - http://github.com/duopixel/Method-Draw/ -->
+
+ <g>
+  <title>background</title>
+  <rect fill="none" id="canvas_background" height="402" width="582" y="-1" x="-1"/>
+  <g display="none" overflow="visible" y="0" x="0" height="100%" width="100%" id="canvasGrid">
+   <rect fill="url(#gridpattern)" stroke-width="0" y="0" x="0" height="100%" width="100%"/>
+  </g>
+ </g>
+ <g>
+  <title>Layer 1</title>
+  <metadata transform="matrix(0.35116598602839133,0,0,0.35116598602839133,0,0) ">Created by potrace 1.15, written by Peter Selinger 2001-2017</metadata>
+  <metadata transform="matrix(0.01085069392704302,0,0,0.01085069392704302,0,0) ">Created by potrace 1.15, written by Peter Selinger 2001-2017</metadata>
+  <path stroke="null" id="svg_29" d="m33.307597,198.277487l0,0c0,-99.963532 115.734392,-181.000002 258.499969,-181.000002l0,0c68.558425,0 134.308933,19.069577 182.787046,53.013662c48.478165,33.944097 75.712923,79.98214 75.712923,127.986341l0,0c0,99.963519 -115.734392,181.000002 -258.499969,181.000002l0,0c-142.76556,0 -258.499969,-81.036483 -258.499969,-181.000002zm129.249985,0l0,0c0,49.981754 57.867231,90.500001 129.249985,90.500001c71.382806,0 129.249985,-40.518247 129.249985,-90.500001c0,-49.981754 -57.867213,-90.500001 -129.249985,-90.500001l0,0c-71.382754,0 -129.249985,40.51826 -129.249985,90.500001z" fill-opacity="null" stroke-opacity="null" stroke-width="1.5" fill="#fff"/>
+ </g>
+</svg>

@@ -48,12 +48,15 @@ class MazeGame(Gtk.DrawingArea):
     """Maze game controller.
     This class handles all of the game logic, event loop, mulitplayer, etc."""
 
-    # Munsell color values http://wiki.laptop.org/go/Munsell
-    EMPTY_COLOR = (203.0 / 255.0, 203.0 / 255.0, 203.0 / 255.0)
-    SOLID_COLOR = (28.0 / 255.0, 28.0 / 255.0, 28.0 / 255.0)
-    GOAL_COLOR = (0x00, 0xff, 0x00)
+    # Munsell neutrals http://wiki.laptop.org/go/Munsell
+    EMPTY_COLOR = (203.0 / 256.0, 203.0 / 256.0, 203.0 / 256.0)
+    SOLID_COLOR = (28.0 / 256.0, 28.0 / 256.0, 28.0 / 256.0)
 
-    def __init__(self, activity, owner, state=None):
+    GOAL_COLOR = (0.0, 1.0, 0.0)
+    HOLE_COLOR = (1.0, 0.0, 0.0)
+    PASSED_COLOR = (0, 0.5, 0.5)
+
+    def __init__(self, activity):
         super(MazeGame, self).__init__()
         # note what time it was when we first launched
         self.game_start_time = time.time()
@@ -65,7 +68,7 @@ class MazeGame(Gtk.DrawingArea):
         self.localplayers = []
 
         # start with just one player
-        player = Player(owner)
+        player = Player(activity.owner)
         self.localplayers.append(player)
         # plus some bonus players (all hidden to start with)
         self.localplayers.extend(player.bonusPlayers())
@@ -80,20 +83,22 @@ class MazeGame(Gtk.DrawingArea):
 
         # start with a small maze using a seed that will be different
         # each time you play
+        state = activity.state
         if state is None:
             height = 9
             width = int(height * self.aspectRatio)
             if width % 2 == 0:
                 width -= 1
             state = {'seed': int(time.time()),
-                     'height': height, 'width': width}
+                     'height': height, 'width': width, 'risk': 0}
 
         if 'finish_time' in state and state['finish_time'] is not None:
             # the maze was alread played, reset it to start a new one
             state['seed'] = int(time.time())
 
         logging.debug('Starting the game with: %s', state)
-        self.maze = Maze(state['seed'], state['width'], state['height'])
+        self.maze = Maze(state['seed'], state['width'], state['height'],
+                         state['risk'])
         self._ebook_mode_detector = sensors.EbookModeDetector()
         self._finish_window = None
         self.reset()
@@ -154,17 +159,17 @@ class MazeGame(Gtk.DrawingArea):
         if width < height:
             if self.maze.width < self.maze.height:
                 self.maze = Maze(self.maze.seed + 1, self.maze.width,
-                                 self.maze.height)
+                                 self.maze.height, self.maze.risk)
             else:
                 self.maze = Maze(self.maze.seed + 1, self.maze.height,
-                                 self.maze.width)
+                                 self.maze.width, self.maze.risk)
         else:
             if self.maze.width > self.maze.height:
                 self.maze = Maze(self.maze.seed + 1, self.maze.width,
-                                 self.maze.height)
+                                 self.maze.height, self.maze.risk)
             else:
                 self.maze = Maze(self.maze.seed + 1, self.maze.height,
-                                 self.maze.width)
+                                 self.maze.width, self.maze.risk)
         if len(self.remoteplayers) > 0:
             self.game_start_time -= 10
             self._send_maze()
@@ -234,17 +239,34 @@ class MazeGame(Gtk.DrawingArea):
                              self.bounds.y + y * self.tileSize,
                              self.tileSize, self.tileSize)
             tile = self.maze.map[x][y]
-            background_color = self.EMPTY_COLOR
-            if tile == self.maze.EMPTY:
-                background_color = self.EMPTY_COLOR
-            elif tile == self.maze.SOLID:
-                background_color = self.SOLID_COLOR
-            elif tile == self.maze.GOAL:
-                background_color = self.GOAL_COLOR
-            self._ctx.save()
-            self._ctx.set_source_rgb(*background_color)
-            self._ctx.rectangle(*rect.get_bounds())
-            self._ctx.fill()
+
+            if tile == self.maze.HOLE:
+                line_width = self.tileSize / 32.
+                center = self.tileSize / 2
+                self._ctx.save()
+                self._ctx.set_source_rgb(*self.EMPTY_COLOR)
+                self._ctx.rectangle(*rect.get_bounds())
+                self._ctx.fill()
+                self._ctx.arc(rect.x + center, rect.y + center,
+                              center - line_width, 0, 2 * pi)
+                self._ctx.save()
+                self._ctx.set_source_rgb(*self.HOLE_COLOR)
+                self._ctx.set_line_width(line_width)
+                self._ctx.fill_preserve()
+                self._ctx.set_source_rgba(*self.SOLID_COLOR)
+                self._ctx.stroke()
+            else:
+                bg = {
+                    self.maze.SOLID: self.SOLID_COLOR,
+                    self.maze.EMPTY: self.EMPTY_COLOR,
+                    self.maze.SEEN: self.EMPTY_COLOR,
+                    self.maze.GOAL: self.GOAL_COLOR,
+                    self.maze.PASSED: self.PASSED_COLOR
+                }
+                self._ctx.save()
+                self._ctx.set_source_rgb(*bg[tile])
+                self._ctx.rectangle(*rect.get_bounds())
+                self._ctx.fill()
 
             if self._show_trail:
                 if tile == self.maze.SEEN:
@@ -252,8 +274,8 @@ class MazeGame(Gtk.DrawingArea):
                     center = self.tileSize / 2
                     self._ctx.set_source_rgba(
                         *self.localplayers[0].bg.get_rgba())
-                    self._ctx.arc(rect.x + center, rect.y + center, radius, 0,
-                                  2 * pi)
+                    self._ctx.arc(rect.x + center, rect.y + center,
+                                  radius, 0, 2 * pi)
                     self._ctx.fill()
             self._ctx.restore()
 
@@ -288,9 +310,11 @@ class MazeGame(Gtk.DrawingArea):
         # draw all players
         for player in self.allplayers:
             if not player.hidden and player != main_player:
-                player.draw(self._ctx, self.bounds, self.tileSize)
+                player.draw(self._ctx, self.bounds, self.tileSize,
+                            self.HOLE_COLOR)
         # draw last the main player
-        main_player.draw(self._ctx, self.bounds, self.tileSize)
+        main_player.draw(self._ctx, self.bounds, self.tileSize,
+                         self.HOLE_COLOR)
 
         ctx.set_source_surface(self._cached_surface)
         ctx.paint()
@@ -448,16 +472,28 @@ class MazeGame(Gtk.DrawingArea):
 
     def player_walk(self, player, change_direction=True):
         oldposition = player.position
-        newposition = player.animate(self.maze, change_direction)
-        if oldposition != newposition:
+        update, newposition = player.animate(self.maze, change_direction)
+        if update:
             self._mark_point_dirty(oldposition)
             self._mark_point_dirty(newposition)
-            if player in self.localplayers:
-                self.maze.map[player.previous[0]][player.previous[1]] = \
-                    self.maze.SEEN
+            if oldposition != newposition and player in self.localplayers:
+                if self.maze.map[player.previous[0]][player.previous[1]] == \
+                        self.maze.PASSED:
+                    pass
+                else:
+                    self.maze.map[player.previous[0]][player.previous[1]] = \
+                        self.maze.SEEN
                 if self.maze.map[newposition[0]][newposition[1]] == \
                         self.maze.GOAL:
                     self.finish(player)
+                elif self.maze.map[newposition[0]][newposition[1]] == \
+                        self.maze.HOLE:
+                    player.fallThroughHole(self.tileSize)
+                    self._activity.broadcast_msg(
+                        'fall_hole:%s,%s' % (str(newposition[0]),
+                                             str(newposition[1])))
+                    self.maze.map[newposition[0]][newposition[1]] = \
+                        self.maze.PASSED
             self.queue_draw()
             if change_direction:
                 GLib.timeout_add(100, self.player_walk, player)
@@ -489,9 +525,9 @@ class MazeGame(Gtk.DrawingArea):
 
     def _send_maze(self):
         self._activity.broadcast_msg(
-            "maze:%d,%d,%d,%d" %
+            "maze:%d,%d,%d,%d,%d" %
             (self.game_running_time() * 1e6, self.maze.seed, self.maze.width,
-             self.maze.height))
+             self.maze.height, self.maze.risk))
 
     def _handle_req_maze(self, player):
         # tell them which maze we are playing, so they can sync up
@@ -545,19 +581,22 @@ class MazeGame(Gtk.DrawingArea):
             req_maze
                 Request to please send me the maze.  Reply is maze:.
 
-            maze: running_time, seed, width, height
+            maze: running_time, seed, width, height, risk
                 A player has a different maze.
                 The one that has been running the longest will force all other
                 players to use that maze.
                 This way new players will join the existing game properly.
 
             move: x, y, dx, dy
-                A player's at x, y is now moving in direction dx, dy
+                A player at x, y is now moving in direction dx, dy
 
             step: x, y, dx, dy
                 A player move using the accelerator, move a single step
 
             show_trail: True/False
+
+            fall_hole: x, y
+                A player has fallen in the hole at x, y
 
             finish: elapsed
                 A player has finished the maze
@@ -590,8 +629,13 @@ class MazeGame(Gtk.DrawingArea):
         elif message.startswith("maze:"):
             # someone has a different maze than us
             self._activity.update_alert('Connected', 'Maze shared!')
-            running_time, seed, width, height = map(lambda x: int(x),
-                                                    message[5:].split(",")[:4])
+            values = map(lambda x: int(x), message[5:].split(","))
+
+            if len(values) == 4:  # peer does not support risk
+                values.append(0)
+                self._activity.disable_risk()
+            running_time, seed, width, height, risk = values
+
             if self.maze.seed == seed:
                 logging.debug('Same seed, don\'t reload Maze')
                 return
@@ -605,7 +649,8 @@ class MazeGame(Gtk.DrawingArea):
                 self.game_start_time = time.time() - running_time
                 # use the new seed
                 self._activity.busy()
-                self.maze = Maze(seed, width, height)
+                self._activity.set_risk(risk)
+                self.maze = Maze(seed, width, height, risk)
                 self._activity.unbusy()
                 self.reset()
         elif message.startswith("finish:"):
@@ -618,6 +663,12 @@ class MazeGame(Gtk.DrawingArea):
         elif message.startswith("show_trail:"):
             show_trail = message.endswith('True')
             self._activity.show_trail_button.set_active(show_trail)
+            self._activity.game.set_show_trail(show_trail)
+
+        elif message.startswith("fall_hole:"):
+            player.fallThroughHole(self.tileSize)
+            x, y = map(lambda x: int(x), message[10:].split(","))
+            self.maze.map[x][y] = self.maze.PASSED
         else:
             # it was something I don't recognize...
             logging.debug("Message from %s: %s", player.nick, message)
@@ -631,7 +682,7 @@ class MazeGame(Gtk.DrawingArea):
         newWidth = int(newHeight * self.aspectRatio)
         if newWidth % 2 == 0:
             newWidth -= 1
-        self._restart(newWidth, newHeight)
+        self._restart(newWidth, newHeight, self.maze.risk)
 
     def easier(self):
         """Make a new maze that is easier than the current one."""
@@ -640,11 +691,14 @@ class MazeGame(Gtk.DrawingArea):
         newWidth = int(newHeight * self.aspectRatio)
         if newWidth % 2 == 0:
             newWidth -= 1
-        self._restart(newWidth, newHeight)
+        self._restart(newWidth, newHeight, self.maze.risk)
 
-    def _restart(self, newWidth, newHeight):
+    def set_risk(self, risk):
+        self._restart(self.maze.width, self.maze.height, risk)
+
+    def _restart(self, newWidth, newHeight, risk):
         self._activity.busy()
-        self.maze = Maze(self.maze.seed + 1, newWidth, newHeight)
+        self.maze = Maze(self.maze.seed + 1, newWidth, newHeight, risk)
         self.reset()
         # tell everyone which maze we are playing, so they can sync up
         if len(self.remoteplayers) > 0:
