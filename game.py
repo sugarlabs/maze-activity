@@ -52,6 +52,7 @@ class MazeGame(Gtk.DrawingArea):
     EMPTY_COLOR = (203.0 / 255.0, 203.0 / 255.0, 203.0 / 255.0)
     SOLID_COLOR = (28.0 / 255.0, 28.0 / 255.0, 28.0 / 255.0)
     GOAL_COLOR = (0x00, 0xff, 0x00)
+    HOLE_COLOR = (255, 0, 0)
 
     def __init__(self, activity, owner, state=None):
         super(MazeGame, self).__init__()
@@ -237,6 +238,8 @@ class MazeGame(Gtk.DrawingArea):
             background_color = self.EMPTY_COLOR
             if tile == self.maze.EMPTY:
                 background_color = self.EMPTY_COLOR
+            elif tile == self.maze.HOLE:
+                background_color = self.HOLE_COLOR
             elif tile == self.maze.SOLID:
                 background_color = self.SOLID_COLOR
             elif tile == self.maze.GOAL:
@@ -288,9 +291,9 @@ class MazeGame(Gtk.DrawingArea):
         # draw all players
         for player in self.allplayers:
             if not player.hidden and player != main_player:
-                player.draw(self._ctx, self.bounds, self.tileSize)
+                player.draw(self._ctx, self.bounds, self.tileSize, self.HOLE_COLOR)
         # draw last the main player
-        main_player.draw(self._ctx, self.bounds, self.tileSize)
+        main_player.draw(self._ctx, self.bounds, self.tileSize, self.HOLE_COLOR)
 
         ctx.set_source_surface(self._cached_surface)
         ctx.paint()
@@ -448,16 +451,19 @@ class MazeGame(Gtk.DrawingArea):
 
     def player_walk(self, player, change_direction=True):
         oldposition = player.position
-        newposition = player.animate(self.maze, change_direction)
-        if oldposition != newposition:
+        update, newposition = player.animate(self.maze, change_direction)
+        if update:
             self._mark_point_dirty(oldposition)
             self._mark_point_dirty(newposition)
-            if player in self.localplayers:
+            if oldposition != newposition and player in self.localplayers:
                 self.maze.map[player.previous[0]][player.previous[1]] = \
                     self.maze.SEEN
                 if self.maze.map[newposition[0]][newposition[1]] == \
                         self.maze.GOAL:
                     self.finish(player)
+                elif self.maze.map[newposition[0]][newposition[1]] == \
+                    self.maze.HOLE:
+                    player.fallThroughHole()
             self.queue_draw()
             if change_direction:
                 GLib.timeout_add(100, self.player_walk, player)

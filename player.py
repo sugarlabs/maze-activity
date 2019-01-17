@@ -49,8 +49,16 @@ class Player:
         self.hidden = False
         self.bonusplayers = None
         self.reset()
+        self.falling = 0.0
+        self.fall_state = False
 
-    def draw(self, ctx, bounds, size):
+    def draw(self, ctx, bounds, size, hole_color):
+        if self.falling > 0.0:
+            self.falling -= 0.2
+            if self.falling <= 0.0:
+                self.falling = 0.0
+                self.fall_state = False
+                self.reset()
         line_width = size / 32.
         rect = Rectangle(bounds.x + self.position[0] * size,
                          bounds.y + self.position[1] * size, size,
@@ -72,6 +80,16 @@ class Player:
             'left': [1., 1., 1., 1.],
             'right': [0., 0., 0., 1.]
         }
+        if self.falling > 0.2:
+            fg = {
+                'centre' : hole_color,
+                'left' : [0.45, 0.45, 0.45, 1.],
+                'right' : [0.55, 0.55, 0.55, 1.]
+            }
+            size *= float(3/2 -self.falling)
+
+        if(self.falling < 1.0 and self.fall_state):
+            size = 10
 
         # a background filled circle with foreground border
         ctx.arc(cx, cy, (size / 2 - line_width), 0, 2 * math.pi)
@@ -124,17 +142,22 @@ class Player:
 
     def animate(self, maze, change_direction=True):
         # if the player finished the maze, then don't move
+        update = False
         if maze.map[self.position[0]][self.position[1]] == maze.GOAL:
             self.direction = (0, 0)
+        elif maze.map[self.position[0]][self.position[1]] == maze.HOLE:
+            update = True
+            self.direction = (0,0)
         if self.direction == (0, 0):
-            return self.position
+            return (update, self.position)
         if self.canGo(self.direction, maze):
+            update = True
             self.move(self.direction, maze)
             if change_direction:
                 self.keepGoing(self.direction, maze)
         else:
             self.direction = (0, 0)
-        return self.position
+        return (update, self.position)
 
     def move(self, direction, maze):
         """Move the player in a given direction (deltax,deltay)"""
@@ -142,6 +165,10 @@ class Player:
                        self.position[1] + direction[1])
         self.previous = self.position
         self.position = newposition
+
+    def fallThroughHole(self):
+        self.fall_state  = True
+        self.falling = 2.0
 
     def canGo(self, direction, maze):
         """Can the player go in this direction without bumping into
