@@ -43,27 +43,46 @@ class Maze:
     EMPTY = 1
     SEEN = 2
     GOAL = 3
+    HOLE = 4
+    PASSED = 5
 
-    def __init__(self, seed, width, height):
+    def __init__(self, seed, width, height, risk):
         # use the seed given to us to make a pseudo-random number generator
         # we will use that to generate the maze, so that other players can
         # generate the exact same maze given the same seed.
-        logging.debug("Generating maze: seed %d, width %d, height %d", seed,
-                      width, height)
+        logging.debug("Generating maze: seed %d, width %d, \
+            height %d, risk %d", seed, width, height, risk)
         self.seed = seed
         self.generator = random.Random(seed)
-        self.width, self.height = width, height
+        self.width, self.height, self.risk = width, height, risk
         self.map = []
         self.bounds = Rectangle(0, 0, width, height)
-
         for x in range(0, width):
             self.map.append([self.SOLID] * self.height)
 
         startx = self.generator.randrange(1, width, 2)
         starty = self.generator.randrange(1, height, 2)
         self.dig(startx, starty)
+        if self.risk:
+            self._make_risk()
+
         for row in self.map:
             logging.debug(row)
+
+    def _make_risk(self):
+        if self.width <= 15:
+            max_holes = 1
+        else:
+            max_holes = int(self.width / 7) - 1
+
+        holes = 0
+        while holes != max_holes:
+            x = self.generator.randrange(1, self.width, 1)
+            y = self.generator.randrange(1, self.height, 1)
+
+            if self.validHole(x, y):
+                self.map[x][y] = self.HOLE
+                holes += 1
 
     def _check_point_in_rectangle(self, rectangle, x, y):
         if x < rectangle.x or y < rectangle.y:
@@ -72,6 +91,18 @@ class Maze:
                 y >= rectangle.y + rectangle.height:
             return False
         return True
+
+    def validHole(self, x, y):
+        if x > 1 and y > 1 and x < self.width - 2 and y < self.height - 2 \
+                and self.map[x][y] != self.SOLID:
+            left = (self.map[x - 1][y] != self.SOLID)
+            right = (self.map[x + 1][y] != self.SOLID)
+            up = (self.map[x][y + 1] != self.SOLID)
+            down = (self.map[x][y - 1] != self.SOLID)
+
+            return (left and right and not (up or down)) or \
+                (up and down and not (left or right))
+        return False
 
     def validMove(self, x, y):
         return self._check_point_in_rectangle(self.bounds, x, y) and \
