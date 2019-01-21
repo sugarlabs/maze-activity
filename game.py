@@ -59,6 +59,8 @@ class MazeGame(Gtk.DrawingArea):
         # note what time it was when we first launched
         self.game_start_time = time.time()
 
+        self.hole = False #Default
+
         # the activity is used to communicate with other players
         self._activity = activity
 
@@ -94,7 +96,7 @@ class MazeGame(Gtk.DrawingArea):
             state['seed'] = int(time.time())
 
         logging.debug('Starting the game with: %s', state)
-        self.maze = Maze(state['seed'], state['width'], state['height'])
+        self.maze = Maze(state['seed'], state['width'], state['height'], hole=self.hole)
         self._ebook_mode_detector = sensors.EbookModeDetector()
         self._finish_window = None
         self.reset()
@@ -155,22 +157,29 @@ class MazeGame(Gtk.DrawingArea):
         if width < height:
             if self.maze.width < self.maze.height:
                 self.maze = Maze(self.maze.seed + 1, self.maze.width,
-                                 self.maze.height)
+                                 self.maze.height, hole=self.hole)
             else:
                 self.maze = Maze(self.maze.seed + 1, self.maze.height,
-                                 self.maze.width)
+                                 self.maze.width, hole=self.hole)
         else:
             if self.maze.width > self.maze.height:
                 self.maze = Maze(self.maze.seed + 1, self.maze.width,
-                                 self.maze.height)
+                                 self.maze.height, hole=self.hole)
             else:
                 self.maze = Maze(self.maze.seed + 1, self.maze.height,
-                                 self.maze.width)
+                                 self.maze.width, hole=self.hole)
         if len(self.remoteplayers) > 0:
             self.game_start_time -= 10
             self._send_maze()
         self._activity.unbusy()
         self.reset()
+
+    def add_hole(self, hole):
+        if(hole is True):
+            self.hole = True
+        else:
+            self.hole = False
+        
 
     def game_running_time(self, newelapsed=None):
         return time.time() - self.game_start_time
@@ -611,7 +620,7 @@ class MazeGame(Gtk.DrawingArea):
                 self.game_start_time = time.time() - running_time
                 # use the new seed
                 self._activity.busy()
-                self.maze = Maze(seed, width, height)
+                self.maze = Maze(seed, width, height, hole=self.hole)
                 self._activity.unbusy()
                 self.reset()
         elif message.startswith("finish:"):
@@ -650,7 +659,7 @@ class MazeGame(Gtk.DrawingArea):
 
     def _restart(self, newWidth, newHeight):
         self._activity.busy()
-        self.maze = Maze(self.maze.seed + 1, newWidth, newHeight)
+        self.maze = Maze(self.maze.seed + 1, newWidth, newHeight, hole=self.hole)
         self.reset()
         # tell everyone which maze we are playing, so they can sync up
         if len(self.remoteplayers) > 0:

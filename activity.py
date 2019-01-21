@@ -107,6 +107,12 @@ class MazeActivity(activity.Activity):
         harder_button.connect('clicked', self._harder_button_cb)
         toolbar_box.toolbar.insert(harder_button, -1)
 
+        self.hole_button = ToggleToolButton('blackhole')
+        self.hole_button.set_tooltip(_('Add holes'))
+        self.hole_button.set_active(False)
+        self.hole_button.connect('toggled', self._add_hole)
+        toolbar_box.toolbar.insert(self.hole_button, -1)
+
         separator = Gtk.SeparatorToolItem()
         toolbar_box.toolbar.insert(separator, -1)
         separator.show()
@@ -132,6 +138,9 @@ class MazeActivity(activity.Activity):
         toolbar_box.show_all()
 
         return toolbar_box
+
+    def _add_hole(self, button):
+        self.game.add_hole(button.get_active())
 
     def _easier_button_cb(self, button):
         self.game.easier()
