@@ -72,17 +72,16 @@ class Maze:
         if self.width <= 15:
             max_holes = 0
         else:
-            max_holes = int(self.width/7) - 1
+            max_holes = int(self.width / 7) - 1
 
         holes = 0
         while holes != max_holes:
             x = self.generator.randrange(1, self.width, 1)
             y = self.generator.randrange(1, self.height, 1)
 
-            if(self.validHole(x,y)):
+            if(self.validHole(x, y)):
                 self.map[x][y] = self.HOLE
                 holes += 1
-
 
     def _check_point_in_rectangle(self, rectangle, x, y):
         if x < rectangle.x or y < rectangle.y:
@@ -93,12 +92,12 @@ class Maze:
         return True
 
     def validHole(self, x, y):
-        if x>1 and y>1 and x<self.width-2 and y<self.height-2 \
-            and self.map[x][y] != self.SOLID:
-            left = (self.map[x-1][y] != self.SOLID)
-            right = (self.map[x+1][y] != self.SOLID)
-            up = (self.map[x][y+1] != self.SOLID)
-            down = (self.map[x][y-1] != self.SOLID)
+        if x > 1 and y > 1 and x < self.width - 2 and y < self.height - 2 \
+                and self.map[x][y] != self.SOLID:
+            left = (self.map[x - 1][y] != self.SOLID)
+            right = (self.map[x + 1][y] != self.SOLID)
+            up = (self.map[x][y + 1] != self.SOLID)
+            down = (self.map[x][y - 1] != self.SOLID)
 
             return (left and right and not (up or down)) or \
                 (up and down and not (left or right))

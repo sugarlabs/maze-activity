@@ -59,7 +59,7 @@ class MazeGame(Gtk.DrawingArea):
         # note what time it was when we first launched
         self.game_start_time = time.time()
 
-        self.hole = False #Default
+        self.hole = False  # Default
 
         # the activity is used to communicate with other players
         self._activity = activity
@@ -96,7 +96,8 @@ class MazeGame(Gtk.DrawingArea):
             state['seed'] = int(time.time())
 
         logging.debug('Starting the game with: %s', state)
-        self.maze = Maze(state['seed'], state['width'], state['height'], hole=self.hole)
+        self.maze = Maze(state['seed'], state['width'], state['height'],
+                         hole=self.hole)
         self._ebook_mode_detector = sensors.EbookModeDetector()
         self._finish_window = None
         self.reset()
@@ -179,7 +180,6 @@ class MazeGame(Gtk.DrawingArea):
             self.hole = True
         else:
             self.hole = False
-        
 
     def game_running_time(self, newelapsed=None):
         return time.time() - self.game_start_time
@@ -300,9 +300,11 @@ class MazeGame(Gtk.DrawingArea):
         # draw all players
         for player in self.allplayers:
             if not player.hidden and player != main_player:
-                player.draw(self._ctx, self.bounds, self.tileSize, self.HOLE_COLOR)
+                player.draw(self._ctx, self.bounds, self.tileSize,
+                            self.HOLE_COLOR)
         # draw last the main player
-        main_player.draw(self._ctx, self.bounds, self.tileSize, self.HOLE_COLOR)
+        main_player.draw(self._ctx, self.bounds, self.tileSize,
+                         self.HOLE_COLOR)
 
         ctx.set_source_surface(self._cached_surface)
         ctx.paint()
@@ -471,7 +473,7 @@ class MazeGame(Gtk.DrawingArea):
                         self.maze.GOAL:
                     self.finish(player)
                 elif self.maze.map[newposition[0]][newposition[1]] == \
-                    self.maze.HOLE:
+                        self.maze.HOLE:
                     player.fallThroughHole()
             self.queue_draw()
             if change_direction:
@@ -659,7 +661,8 @@ class MazeGame(Gtk.DrawingArea):
 
     def _restart(self, newWidth, newHeight):
         self._activity.busy()
-        self.maze = Maze(self.maze.seed + 1, newWidth, newHeight, hole=self.hole)
+        self.maze = Maze(self.maze.seed + 1, newWidth, newHeight,
+                         hole=self.hole)
         self.reset()
         # tell everyone which maze we are playing, so they can sync up
         if len(self.remoteplayers) > 0:

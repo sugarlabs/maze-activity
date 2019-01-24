@@ -1,2 +1,4 @@
 dist
 *.pyc
+settings.json
+locale/

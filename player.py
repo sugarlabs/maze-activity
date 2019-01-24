@@ -82,11 +82,11 @@ class Player:
         }
         if self.falling > 0.2:
             fg = {
-                'centre' : hole_color,
-                'left' : [0.45, 0.45, 0.45, 1.],
-                'right' : [0.55, 0.55, 0.55, 1.]
+                'centre': hole_color,
+                'left': [0.45, 0.45, 0.45, 1.],
+                'right': [0.55, 0.55, 0.55, 1.]
             }
-            size *= float(3/2 -self.falling)
+            size *= float(3 / 2 - self.falling)
 
         if(self.falling < 1.0 and self.fall_state):
             size = 10
@@ -147,7 +147,7 @@ class Player:
             self.direction = (0, 0)
         elif maze.map[self.position[0]][self.position[1]] == maze.HOLE:
             update = True
-            self.direction = (0,0)
+            self.direction = (0, 0)
         if self.direction == (0, 0):
             return (update, self.position)
         if self.canGo(self.direction, maze):
@@ -167,7 +167,7 @@ class Player:
         self.position = newposition
 
     def fallThroughHole(self):
-        self.fall_state  = True
+        self.fall_state = True
         self.falling = 2.0
 
     def canGo(self, direction, maze):
