@@ -576,6 +576,9 @@ class MazeGame(Gtk.DrawingArea):
 
             show_trail: True/False
 
+            blackhole: True/False
+                To enable holes in mazes
+
             finish: elapsed
                 A player has finished the maze
         """
@@ -635,6 +638,11 @@ class MazeGame(Gtk.DrawingArea):
         elif message.startswith("show_trail:"):
             show_trail = message.endswith('True')
             self._activity.show_trail_button.set_active(show_trail)
+
+        elif message.startswith("blackhole:"):
+            blackhole = message.endswith('True')
+            self._activity.hole_button.set_active(blackhole)
+
         else:
             # it was something I don't recognize...
             logging.debug("Message from %s: %s", player.nick, message)
