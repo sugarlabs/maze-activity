@@ -141,6 +141,8 @@ class MazeActivity(activity.Activity):
 
     def _add_hole(self, button):
         self.game.add_hole(button.get_active())
+        if self.game.add_hole(button.get_active()):
+            self.broadcast_msg('show_hole:%s' % str(button.get_active()))
 
     def _easier_button_cb(self, button):
         self.game.easier()
