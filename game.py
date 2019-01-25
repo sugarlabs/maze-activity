@@ -33,6 +33,7 @@ import cairo
 
 import logging
 from gettext import gettext as _
+import math
 
 from sugar3.graphics import style
 from sugar3.graphics.icon import Icon
@@ -244,19 +245,37 @@ class MazeGame(Gtk.DrawingArea):
                              self.bounds.y + y * self.tileSize,
                              self.tileSize, self.tileSize)
             tile = self.maze.map[x][y]
-            background_color = self.EMPTY_COLOR
-            if tile == self.maze.EMPTY:
-                background_color = self.EMPTY_COLOR
-            elif tile == self.maze.HOLE:
+
+            line_width = self.tileSize / 32.
+            cx = rect.x + self.tileSize / 2
+            cy = rect.y + self.tileSize / 2
+            if(tile == self.maze.HOLE):
+                self._ctx.save()
+                self._ctx.set_source_rgb(*self.EMPTY_COLOR)
+                self._ctx.rectangle(*rect.get_bounds())
+                self._ctx.fill()
+                self._ctx.arc(cx, cy, (self.tileSize / 2 - line_width),
+                              0, 2 * math.pi)
                 background_color = self.HOLE_COLOR
-            elif tile == self.maze.SOLID:
-                background_color = self.SOLID_COLOR
-            elif tile == self.maze.GOAL:
-                background_color = self.GOAL_COLOR
-            self._ctx.save()
-            self._ctx.set_source_rgb(*background_color)
-            self._ctx.rectangle(*rect.get_bounds())
-            self._ctx.fill()
+                self._ctx.save()
+                self._ctx.set_source_rgb(*background_color)
+                self._ctx.set_line_width(line_width)
+                self._ctx.fill_preserve()
+                self._ctx.set_source_rgba(*self.SOLID_COLOR)
+                self._ctx.stroke()
+
+            else:
+                background_color = self.EMPTY_COLOR
+                if tile == self.maze.EMPTY:
+                    background_color = self.EMPTY_COLOR
+                elif tile == self.maze.SOLID:
+                    background_color = self.SOLID_COLOR
+                elif tile == self.maze.GOAL:
+                    background_color = self.GOAL_COLOR
+                self._ctx.save()
+                self._ctx.set_source_rgb(*background_color)
+                self._ctx.rectangle(*rect.get_bounds())
+                self._ctx.fill()
 
             if self._show_trail:
                 if tile == self.maze.SEEN:
