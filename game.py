@@ -808,7 +808,7 @@ class FinishWindow(Gtk.Window):
         for player in all_players:
             if player.elapsed is None:
                 player.elapsed = float("inf")
-        all_players.sort(key = lambda a: a.elapsed)
+        all_players.sort(key=lambda a: a.elapsed)
         for player in all_players:
             if not player.hidden:
                 players_grid.attach(
