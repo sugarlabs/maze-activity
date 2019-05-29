@@ -1,6 +1,6 @@
 [Activity]
 name = Maze
-exec = sugar-activity activity.MazeActivity
+exec = sugar-activity3 activity.MazeActivity
 icon = activity-maze
 activity_version = 28
 host_version = 1

@@ -805,7 +805,10 @@ class FinishWindow(Gtk.Window):
         players_grid.set_border_width(style.DEFAULT_SPACING)
         row = 0
         all_players = self._game.allplayers
-        all_players.sort(lambda a, b: cmp(a.elapsed, b.elapsed))
+        for player in all_players:
+            if player.elapsed is None:
+                player.elapsed = float("inf")
+        all_players.sort(key = lambda a: a.elapsed)
         for player in all_players:
             if not player.hidden:
                 players_grid.attach(
