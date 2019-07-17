@@ -58,6 +58,7 @@ class MazeGame(Gtk.DrawingArea):
 
     def __init__(self, activity):
         super(MazeGame, self).__init__()
+
         # note what time it was when we first launched
         self.game_start_time = time.time()
 
@@ -194,7 +195,7 @@ class MazeGame(Gtk.DrawingArea):
         # force size recalcuation
         self._recalculate_sizes(self.get_allocation())
 
-        self.queue_draw()
+        self.redraw()
         self.mouse_in_use = 0
         if self._ebook_mode_detector.get_ebook_mode():
             self._start_accelerometer()
@@ -218,20 +219,30 @@ class MazeGame(Gtk.DrawingArea):
                                 self.tileSize * self.maze.height)
         self.outline = int(self.tileSize / 5)
         self._cached_surface = None
+        self.queue_draw()
         self._dirty_rect = self.maze.bounds
 
     def __draw_cb(self, widget, ctx):
-        """Draw the current state of the game.
-        This makes use of the dirty rectangle to reduce CPU load."""
+        """ Draw part of the widget. """
 
+        # on first signal, create a cached surface and draw onto it
         if self._cached_surface is None:
             self._cached_surface = ctx.get_target().create_similar(
                 cairo.CONTENT_COLOR_ALPHA, self._width, self._height)
             self._ctx = cairo.Context(self._cached_surface)
+            self.redraw()
+
+        # paint only the part of the surface that GTK tells us to
+        ctx.set_source_surface(self._cached_surface)
+        ctx.paint()
+
+    def redraw(self):
+        """ Redraw the dirty parts of the maze, to reduce CPU load. """
+
+        if self._cached_surface is None:
+            return
 
         if self._dirty_rect is None and len(self._dirty_points) == 0:
-            ctx.set_source_surface(self._cached_surface)
-            ctx.paint()
             return
 
         def drawPoint(x, y):
@@ -316,9 +327,6 @@ class MazeGame(Gtk.DrawingArea):
         main_player.draw(self._ctx, self.bounds, self.tileSize,
                          self.HOLE_COLOR)
 
-        ctx.set_source_surface(self._cached_surface)
-        ctx.paint()
-
         # clear the dirty rect so nothing will be drawn until there is a change
         self._dirty_rect = None
         self._dirty_points = []
@@ -327,14 +335,19 @@ class MazeGame(Gtk.DrawingArea):
         if self._show_trail != show_trail:
             self._show_trail = show_trail
             self._dirty_rect = self.maze.bounds
-            self.queue_draw()
+            self.redraw()
             return True
         else:
             return False
 
     def _mark_point_dirty(self, pt):
-        """Mark a single point that needs to be redrawn."""
+        """ Mark a maze point that needs to be redrawn,
+            and ask GTK to redraw the widget in that area. """
         self._dirty_points.append(pt)
+        rect = Rectangle(self.bounds.x + pt[0] * self.tileSize,
+                         self.bounds.y + pt[1] * self.tileSize,
+                         self.tileSize, self.tileSize)
+        self.queue_draw_area(rect.x, rect.y, rect.width, rect.height)
 
     def _ebook_mode_changed_cb(self, detector, ebook_mode):
         if ebook_mode:
@@ -472,31 +485,33 @@ class MazeGame(Gtk.DrawingArea):
 
     def player_walk(self, player, change_direction=True):
         oldposition = player.position
-        update, newposition = player.animate(self.maze, change_direction)
+        update, newposition = player.animate(
+            self.maze, self.tileSize, change_direction)
         if update:
             self._mark_point_dirty(oldposition)
             self._mark_point_dirty(newposition)
-            if oldposition != newposition and player in self.localplayers:
-                if self.maze.map[player.previous[0]][player.previous[1]] == \
-                        self.maze.PASSED:
-                    pass
-                else:
-                    self.maze.map[player.previous[0]][player.previous[1]] = \
-                        self.maze.SEEN
-                if self.maze.map[newposition[0]][newposition[1]] == \
-                        self.maze.GOAL:
-                    self.finish(player)
-                elif self.maze.map[newposition[0]][newposition[1]] == \
-                        self.maze.HOLE:
+            if oldposition != newposition:
+
+                # fall into hole
+                nx, ny = newposition
+                if self.maze.map[nx][ny] == self.maze.HOLE:
                     player.fallThroughHole(self.tileSize)
-                    self._activity.broadcast_msg(
-                        'fall_hole:%s,%s' % (str(newposition[0]),
-                                             str(newposition[1])))
-                    self.maze.map[newposition[0]][newposition[1]] = \
-                        self.maze.PASSED
-            self.queue_draw()
+                    self._mark_point_dirty((0, 0))
+                    self.maze.map[nx][ny] = self.maze.PASSED
+
+                if player in self.localplayers:
+                    # mark my trail
+                    px, py = (player.previous[0], player.previous[1])
+                    if self.maze.map[px][py] != self.maze.PASSED:
+                        self.maze.map[px][py] = self.maze.SEEN
+                    # detect my move into goal
+                    if self.maze.map[nx][ny] == self.maze.GOAL:
+                        self.finish(player)
+            self.redraw()
+
             if change_direction:
-                GLib.timeout_add(100, self.player_walk, player)
+                if player.direction != (0, 0):
+                    GLib.timeout_add(100, self.player_walk, player)
             else:
                 # if we have peers and the player is the main local player
                 if len(self.remoteplayers) > 0 and \
@@ -505,6 +520,7 @@ class MazeGame(Gtk.DrawingArea):
                         "step:%d,%d,%d,%d" %
                         (player.position[0], player.position[1],
                          player.direction[0], player.direction[1]))
+        return False
 
     def buddy_joined(self, buddy):
         if buddy:
@@ -595,9 +611,6 @@ class MazeGame(Gtk.DrawingArea):
 
             show_trail: True/False
 
-            fall_hole: x, y
-                A player has fallen in the hole at x, y
-
             finish: elapsed
                 A player has finished the maze
         """
@@ -665,10 +678,6 @@ class MazeGame(Gtk.DrawingArea):
             self._activity.show_trail_button.set_active(show_trail)
             self._activity.game.set_show_trail(show_trail)
 
-        elif message.startswith("fall_hole:"):
-            player.fallThroughHole(self.tileSize)
-            x, y = map(lambda x: int(x), message[10:].split(","))
-            self.maze.map[x][y] = self.maze.PASSED
         else:
             # it was something I don't recognize...
             logging.debug("Message from %s: %s", player.nick, message)
@@ -712,7 +721,7 @@ class MazeGame(Gtk.DrawingArea):
             'finish for nick %s (locally determined)' % (player.nick))
         self.finish_time = time.time()
         player.elapsed = self.finish_time - self.level_start_time
-        self.queue_draw()
+        self.redraw()
         if len(self.remoteplayers) > 0 and \
                 player == self.localplayers[0]:
             self._activity.broadcast_msg("finish:%.2f" % player.elapsed)

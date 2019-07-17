@@ -52,11 +52,6 @@ class Player:
         self.falling = 0
 
     def draw(self, ctx, bounds, size, hole_color):
-        if self.falling > 0:
-            self.falling -= max(1, int(size / 5))
-            if self.falling <= 20:
-                self.falling = 0
-                self.reset()
         line_width = size / 32.
         rect = Rectangle(bounds.x + self.position[0] * size,
                          bounds.y + self.position[1] * size, size,
@@ -135,26 +130,34 @@ class Player:
         if self.look != 'centre':
             self.hidden = True
 
-    def animate(self, maze, change_direction=True):
+    def animate(self, maze, size, change_direction=True):
+        # if player is falling
+        if self.falling > 0:
+            self.falling -= max(1, int(size / 4))
+            if self.falling <= 20:
+                self.falling = 0
+                self.reset()
+            return (True, self.position)
+
         # if the player finished the maze, then don't move
-        update = False
         if maze.map[self.position[0]][self.position[1]] == maze.GOAL:
             self.direction = (0, 0)
-        elif maze.map[self.position[0]][self.position[1]] == \
+            return (False, self.position)
+
+        if maze.map[self.position[0]][self.position[1]] == \
                 maze.HOLE or (maze.map[self.position[0]][self.position[1]] ==
                               maze.PASSED and self.falling > 0):
-            update = True
             self.direction = (0, 0)
-        if self.direction == (0, 0):
-            return (update, self.position)
+            return (True, self.position)
+
         if self.canGo(self.direction, maze):
-            update = True
             self.move(self.direction, maze)
             if change_direction:
                 self.keepGoing(self.direction, maze)
-        else:
-            self.direction = (0, 0)
-        return (update, self.position)
+            return (True, self.position)
+
+        self.direction = (0, 0)
+        return (False, self.position)
 
     def move(self, direction, maze):
         """Move the player in a given direction (deltax,deltay)"""
