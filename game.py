@@ -540,10 +540,17 @@ class MazeGame(Gtk.DrawingArea):
              player.direction[0], player.direction[1]))
 
     def _send_maze(self):
-        self._activity.broadcast_msg(
-            "maze:%d,%d,%d,%d,%d" %
-            (self.game_running_time() * 1e6, self.maze.seed, self.maze.width,
-             self.maze.height, self.maze.risk))
+        msg = "maze:%d,%d,%d,%d,%d" % (self.game_running_time() * 1e6,
+                                       self.maze.seed, self.maze.width,
+                                       self.maze.height, self.maze.risk)
+
+        passed = self.maze.get_passed()
+        if passed:
+            msg += ',%d' % len(passed)
+            for hole in passed:
+                msg += ',%d,%d' % hole
+
+        self._activity.broadcast_msg(msg)
 
     def _handle_req_maze(self, player):
         # tell them which maze we are playing, so they can sync up
@@ -597,7 +604,7 @@ class MazeGame(Gtk.DrawingArea):
             req_maze
                 Request to please send me the maze.  Reply is maze:.
 
-            maze: running_time, seed, width, height, risk
+            maze: running_time, seed, width, height, risk, [holes...]
                 A player has a different maze.
                 The one that has been running the longest will force all other
                 players to use that maze.
@@ -647,7 +654,7 @@ class MazeGame(Gtk.DrawingArea):
             if len(values) == 4:  # peer does not support risk
                 values.append(0)
                 self._activity.disable_risk()
-            running_time, seed, width, height, risk = values
+            running_time, seed, width, height, risk = values[:5]
 
             if self.maze.seed == seed:
                 logging.debug('Same seed, don\'t reload Maze')
@@ -664,6 +671,13 @@ class MazeGame(Gtk.DrawingArea):
                 self._activity.busy()
                 self._activity.set_risk(risk)
                 self.maze = Maze(seed, width, height, risk)
+                # mark passed holes
+                if len(values) > 5:
+                    n = int(values[5])
+                    for i in range(n):
+                        x = int(values[5 + i * 2 + 1])
+                        y = int(values[5 + i * 2 + 2])
+                        self.maze.map[x][y] = self.maze.PASSED
                 self._activity.unbusy()
                 self.reset()
         elif message.startswith("finish:"):

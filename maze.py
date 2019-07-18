@@ -56,6 +56,7 @@ class Maze:
         self.generator = random.Random(seed)
         self.width, self.height, self.risk = width, height, risk
         self.map = []
+        self.holes = []
         self.bounds = Rectangle(0, 0, width, height)
         for x in range(0, width):
             self.map.append([self.SOLID] * self.height)
@@ -82,6 +83,7 @@ class Maze:
 
             if self.validHole(x, y):
                 self.map[x][y] = self.HOLE
+                self.holes.append((x, y))
                 holes += 1
 
     def _check_point_in_rectangle(self, rectangle, x, y):
@@ -148,3 +150,12 @@ class Maze:
                 stack.append((x + direction[0] * 2, y + direction[1] * 2))
             else:
                 stack.pop()
+
+    def get_passed(self):
+        ''' Return a list of hole coordinate pairs that have been passed. '''
+        passed = []
+        for hole in self.holes:
+            x, y = hole
+            if self.map[x][y] == self.PASSED:
+                passed.append(hole)
+        return passed
