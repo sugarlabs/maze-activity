@@ -649,7 +649,7 @@ class MazeGame(Gtk.DrawingArea):
         elif message.startswith("maze:"):
             # someone has a different maze than us
             self._activity.update_alert('Connected', 'Maze shared!')
-            values = map(lambda x: int(x), message[5:].split(","))
+            values = [int(x) for x in message[5:].split(",")]
 
             if len(values) == 4:  # peer does not support risk
                 values.append(0)
@@ -805,7 +805,7 @@ class FinishWindow(Gtk.Window):
         players_grid.set_border_width(style.DEFAULT_SPACING)
         row = 0
         all_players = self._game.allplayers
-        all_players.sort(lambda a, b: cmp(a.elapsed, b.elapsed))
+        all_players.sort(key=lambda x: x.elapsed)
         for player in all_players:
             if not player.hidden:
                 players_grid.attach(

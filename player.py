@@ -33,7 +33,7 @@ from maze import Rectangle
 class Player:
     def __init__(self, buddy, look='centre'):
         self.buddy = buddy
-        name = buddy.props.nick.decode('utf-8')
+        name = buddy.props.nick
         self.nick = unicodedata.normalize('NFC', name)
         colors = buddy.props.color.split(",")
         self.fg = style.Color(colors[0])

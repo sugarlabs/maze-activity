@@ -10,6 +10,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import GLib
 from gi.repository import Gdk
 from gi.repository import Gtk
+from gi.repository import TelepathyGLib
 
 from sugar3.activity import activity
 from sugar3.presence.presenceservice import PresenceService
@@ -180,8 +181,9 @@ class MazeActivity(activity.Activity):
         self.broadcast_msg('req_maze')
 
     def _setup(self):
+        CHANNEL = TelepathyGLib.IFACE_CHANNEL
         self.text_channel = TextChannelWrapper(
-            self.shared_activity.telepathy_text_chan,
+            self.shared_activity.telepathy_text_chan[CHANNEL],
             self.shared_activity.telepathy_conn, self.pservice)
         self.text_channel.set_received_callback(self._received_cb)
         self.shared_activity.connect('buddy-joined', self._buddy_joined_cb)
