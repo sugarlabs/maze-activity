@@ -6,6 +6,7 @@ import json
 import gi
 gi.require_version('Gdk', '3.0')
 gi.require_version('Gtk', '3.0')
+gi.require_version('TelepathyGLib', '0.12')
 
 from gi.repository import GLib
 from gi.repository import Gdk
