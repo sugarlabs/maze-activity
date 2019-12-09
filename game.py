@@ -209,12 +209,12 @@ class MazeGame(Gtk.DrawingArea):
         self._width = allocation.width
         self._height = allocation.height
         # compute the size of the tiles given the screen size, etc.
-        self.tileSize = min(self._width / self.maze.width,
-                            self._height / self.maze.height)
+        self.tileSize = min(self._width // self.maze.width,
+                            self._height // self.maze.height)
         self.bounds = Rectangle((self._width - self.tileSize *
-                                 self.maze.width) / 2,
+                                 self.maze.width) // 2,
                                 (self._height - self.tileSize *
-                                 self.maze.height) / 2,
+                                 self.maze.height) // 2,
                                 self.tileSize * self.maze.width,
                                 self.tileSize * self.maze.height)
         self.outline = int(self.tileSize / 5)
