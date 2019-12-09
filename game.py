@@ -57,7 +57,7 @@ class MazeGame(Gtk.DrawingArea):
     PASSED_COLOR = (0, 0.5, 0.5)
 
     def __init__(self, activity):
-        super(MazeGame, self).__init__()
+        super().__init__()
 
         # note what time it was when we first launched
         self.game_start_time = time.time()
