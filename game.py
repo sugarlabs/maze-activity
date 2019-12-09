@@ -805,7 +805,7 @@ class FinishWindow(Gtk.Window):
         players_grid.set_border_width(style.DEFAULT_SPACING)
         row = 0
         all_players = self._game.allplayers
-        all_players.sort(key=lambda x: x.elapsed)
+        all_players.sort(key=lambda x: x.elapsed if x.elapsed else 0)
         for player in all_players:
             if not player.hidden:
                 players_grid.attach(
