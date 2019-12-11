@@ -190,8 +190,7 @@ class MazeActivity(activity.Activity):
     def _received_cb(self, buddy, text):
         if buddy == self.owner:
             return
-        self.game.msg_received(buddy, text.encode(
-            'utf-8').decode('unicode_escape'))
+        self.game.msg_received(buddy, text)
 
     def _add_alert(self, title, text=None):
         self.grab_focus()
