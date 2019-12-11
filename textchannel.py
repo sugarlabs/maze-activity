@@ -1,6 +1,5 @@
 
 import dbus
-import json
 import logging
 
 import gi
@@ -47,7 +46,7 @@ class TextChannelWrapper(object):
     def post(self, msg):
         if msg is not None:
             _logger.debug('post')
-            self._send(json.dumps(msg))
+            self._send(msg)
 
     def _send(self, text):
         '''Send text over the Telepathy text channel.'''

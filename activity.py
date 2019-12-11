@@ -241,7 +241,7 @@ class MazeActivity(activity.Activity):
         if self.text_channel:
             # FIXME: can't identify the sender at the other end,
             # add the pubkey to the text message
-            self.text_channel._send('%s|%s' % (self.my_key, message))
+            self.text_channel.post('%s|%s' % (self.my_key, message))
 
     def write_file(self, file_path):
         logging.debug('Saving the state of the game...')
