@@ -527,8 +527,8 @@ class MazeGame(Gtk.DrawingArea):
             logging.debug("Join: %s - %s", buddy.props.nick,
                           buddy.props.color)
             player = Player(buddy)
-            player.uid = buddy.get_key()
-            self.remoteplayers[buddy.get_key()] = player
+            player.uid = buddy.props.key
+            self.remoteplayers[buddy.props.key] = player
             self.allplayers.append(player)
             self.allplayers.extend(player.bonusPlayers())
             self._mark_point_dirty(player.position)
@@ -562,15 +562,15 @@ class MazeGame(Gtk.DrawingArea):
 
     def buddy_left(self, buddy):
         logging.debug('buddy left %s %s', buddy.__class__, dir(buddy))
-        if buddy.get_key() in self.remoteplayers:
-            player = self.remoteplayers[buddy.get_key()]
+        if buddy.props.key in self.remoteplayers:
+            player = self.remoteplayers[buddy.props.key]
             logging.debug("Leave: %s", player.nick)
             self._mark_point_dirty(player.position)
             self.allplayers.remove(player)
             for bonusplayer in player.bonusPlayers():
                 self._mark_point_dirty(bonusplayer.position)
                 self.allplayers.remove(bonusplayer)
-            del self.remoteplayers[buddy.get_key()]
+            del self.remoteplayers[buddy.props.key]
 
     def msg_received(self, buddy, message):
         logging.debug('msg received %s', message)
@@ -580,6 +580,7 @@ class MazeGame(Gtk.DrawingArea):
             self.handleMessage(None, message)
             return
 
+        key = str(key.encode())
         if key in self.remoteplayers:
             player = self.remoteplayers[key]
             try:
