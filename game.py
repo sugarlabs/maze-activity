@@ -574,6 +574,7 @@ class MazeGame(Gtk.DrawingArea):
 
     def msg_received(self, buddy, message):
         logging.debug('msg received %s', message)
+        print('msg received %s', message)
         key, message = message.split('|')
         if message.startswith('maze'):
             self.handleMessage(None, message)

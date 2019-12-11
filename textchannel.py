@@ -23,7 +23,7 @@ CHANNEL_TEXT_MESSAGE_TYPE_NORMAL = TelepathyGLib.ChannelTextMessageType.NORMAL
 #SOCKET_ADDRESS_TYPE_UNIX = TelepathyGLib.SocketAddressType.UNIX
 #SOCKET_ACCESS_CONTROL_LOCALHOST = TelepathyGLib.SocketAccessControl.LOCALHOST
 
-_logger = logging.getLogger('CollabWrapper')
+_logger = logging.getLogger('TextChannelWrapper')
 
 from sugar3.presence import presenceservice
 from sugar3.activity.activity import SCOPE_PRIVATE
