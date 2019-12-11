@@ -182,7 +182,7 @@ class MazeActivity(activity.Activity):
     def _setup(self):
         self.text_channel = TextChannelWrapper(
             self.shared_activity.telepathy_text_chan,
-            self.shared_activity.telepathy_conn, self.pservice)
+            self.shared_activity.telepathy_conn)
         self.text_channel.set_received_callback(self._received_cb)
         self.shared_activity.connect('buddy-joined', self._buddy_joined_cb)
         self.shared_activity.connect('buddy-left', self._buddy_left_cb)
