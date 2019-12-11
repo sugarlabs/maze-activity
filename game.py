@@ -579,6 +579,9 @@ class MazeGame(Gtk.DrawingArea):
             self.handleMessage(None, message)
             return
 
+        # FIXME: Buddy.props.key is a quoted bytes, but self.my_key is not,
+        # until fixed we shall quote the received key so comparison works
+        # https://github.com/sugarlabs/sugar-toolkit-gtk3/issues/433
         key = str(key.encode())
         if key in self.remoteplayers:
             player = self.remoteplayers[key]
