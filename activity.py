@@ -60,7 +60,7 @@ class MazeActivity(activity.Activity):
             self.connect('joined', self._joined_cb)
             if self.get_shared():
                 # we have already joined
-                self._joined_cb()
+                self._joined_cb('joined')
         else:
             # we are creating the activity
             self.connect('shared', self._shared_cb)
