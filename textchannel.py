@@ -103,8 +103,6 @@ class TextChannelWrapper(object):
             # Exclude any auxiliary messages
             return
 
-        msg = json.loads(text)
-
         if self._activity_cb:
             try:
                 self._text_chan[CHANNEL_INTERFACE_GROUP]
@@ -121,7 +119,7 @@ class TextChannelWrapper(object):
                 _logger.debug('Else: received from sender %r buddy %r' %
                               (sender, buddy))
 
-            self._activity_cb(buddy, msg)
+            self._activity_cb(buddy, text)
             self._text_chan[
                 CHANNEL_TYPE_TEXT].AcknowledgePendingMessages([identity])
         else:
