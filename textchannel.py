@@ -77,6 +77,7 @@ class TextChannelWrapper(object):
 
     def set_received_callback(self, callback):
         '''Connect the function callback to the signal.
+
         callback -- callback function taking buddy and text args
         '''
         if self._text_chan is None:
@@ -95,6 +96,7 @@ class TextChannelWrapper(object):
 
     def _received_cb(self, identity, timestamp, sender, type_, flags, text):
         '''Handle received text from the text channel.
+
         Converts sender to a Buddy.
         Calls self._activity_cb which is a callback to the activity.
         '''
@@ -129,7 +131,9 @@ class TextChannelWrapper(object):
 
     def set_closed_callback(self, callback):
         '''Connect a callback for when the text channel is closed.
+
         callback -- callback function taking no args
+
         '''
         _logger.debug('set closed callback')
         self._activity_close_cb = callback
@@ -151,7 +155,7 @@ class TextChannelWrapper(object):
         if my_csh == cs_handle:
             handle = conn.GetSelfHandle()
         elif group.GetGroupFlags() & \
-                CHANNEL_GROUP_FLAG_CHANNEL_SPECIFIC_HANDLES:
+              CHANNEL_GROUP_FLAG_CHANNEL_SPECIFIC_HANDLES:
             handle = group.GetHandleOwners([cs_handle])[0]
         else:
             handle = cs_handle
