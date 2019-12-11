@@ -57,7 +57,7 @@ class MazeGame(Gtk.DrawingArea):
     PASSED_COLOR = (0, 0.5, 0.5)
 
     def __init__(self, activity):
-        super(MazeGame, self).__init__()
+        super().__init__()
 
         # note what time it was when we first launched
         self.game_start_time = time.time()
@@ -209,12 +209,12 @@ class MazeGame(Gtk.DrawingArea):
         self._width = allocation.width
         self._height = allocation.height
         # compute the size of the tiles given the screen size, etc.
-        self.tileSize = min(self._width / self.maze.width,
-                            self._height / self.maze.height)
+        self.tileSize = min(self._width // self.maze.width,
+                            self._height // self.maze.height)
         self.bounds = Rectangle((self._width - self.tileSize *
-                                 self.maze.width) / 2,
+                                 self.maze.width) // 2,
                                 (self._height - self.tileSize *
-                                 self.maze.height) / 2,
+                                 self.maze.height) // 2,
                                 self.tileSize * self.maze.width,
                                 self.tileSize * self.maze.height)
         self.outline = int(self.tileSize / 5)
@@ -527,8 +527,8 @@ class MazeGame(Gtk.DrawingArea):
             logging.debug("Join: %s - %s", buddy.props.nick,
                           buddy.props.color)
             player = Player(buddy)
-            player.uid = buddy.get_key()
-            self.remoteplayers[buddy.get_key()] = player
+            player.uid = buddy.props.key
+            self.remoteplayers[buddy.props.key] = player
             self.allplayers.append(player)
             self.allplayers.extend(player.bonusPlayers())
             self._mark_point_dirty(player.position)
@@ -562,15 +562,15 @@ class MazeGame(Gtk.DrawingArea):
 
     def buddy_left(self, buddy):
         logging.debug('buddy left %s %s', buddy.__class__, dir(buddy))
-        if buddy.get_key() in self.remoteplayers:
-            player = self.remoteplayers[buddy.get_key()]
+        if buddy.props.key in self.remoteplayers:
+            player = self.remoteplayers[buddy.props.key]
             logging.debug("Leave: %s", player.nick)
             self._mark_point_dirty(player.position)
             self.allplayers.remove(player)
             for bonusplayer in player.bonusPlayers():
                 self._mark_point_dirty(bonusplayer.position)
                 self.allplayers.remove(bonusplayer)
-            del self.remoteplayers[buddy.get_key()]
+            del self.remoteplayers[buddy.props.key]
 
     def msg_received(self, buddy, message):
         logging.debug('msg received %s', message)
@@ -579,6 +579,10 @@ class MazeGame(Gtk.DrawingArea):
             self.handleMessage(None, message)
             return
 
+        # FIXME: Buddy.props.key is a quoted bytes, but self.my_key is not,
+        # until fixed we shall quote the received key so comparison works
+        # https://github.com/sugarlabs/sugar-toolkit-gtk3/issues/433
+        key = str(key.encode())
         if key in self.remoteplayers:
             player = self.remoteplayers[key]
             try:
@@ -649,7 +653,7 @@ class MazeGame(Gtk.DrawingArea):
         elif message.startswith("maze:"):
             # someone has a different maze than us
             self._activity.update_alert('Connected', 'Maze shared!')
-            values = map(lambda x: int(x), message[5:].split(","))
+            values = [int(x) for x in message[5:].split(",")]
 
             if len(values) == 4:  # peer does not support risk
                 values.append(0)
@@ -805,7 +809,7 @@ class FinishWindow(Gtk.Window):
         players_grid.set_border_width(style.DEFAULT_SPACING)
         row = 0
         all_players = self._game.allplayers
-        all_players.sort(lambda a, b: cmp(a.elapsed, b.elapsed))
+        all_players.sort(key=lambda x: x.elapsed if x.elapsed else 0)
         for player in all_players:
             if not player.hidden:
                 players_grid.attach(

@@ -60,7 +60,7 @@ class MazeActivity(activity.Activity):
             self.connect('joined', self._joined_cb)
             if self.get_shared():
                 # we have already joined
-                self._joined_cb()
+                self._joined_cb(self)
         else:
             # we are creating the activity
             self.connect('shared', self._shared_cb)
@@ -182,7 +182,7 @@ class MazeActivity(activity.Activity):
     def _setup(self):
         self.text_channel = TextChannelWrapper(
             self.shared_activity.telepathy_text_chan,
-            self.shared_activity.telepathy_conn, self.pservice)
+            self.shared_activity.telepathy_conn)
         self.text_channel.set_received_callback(self._received_cb)
         self.shared_activity.connect('buddy-joined', self._buddy_joined_cb)
         self.shared_activity.connect('buddy-left', self._buddy_left_cb)
@@ -240,7 +240,7 @@ class MazeActivity(activity.Activity):
         if self.text_channel:
             # FIXME: can't identify the sender at the other end,
             # add the pubkey to the text message
-            self.text_channel.send('%s|%s' % (self.my_key, message))
+            self.text_channel.post('%s|%s' % (self.my_key, message))
 
     def write_file(self, file_path):
         logging.debug('Saving the state of the game...')
