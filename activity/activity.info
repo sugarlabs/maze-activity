@@ -2,8 +2,7 @@
 name = Maze
 exec = sugar-activity activity.MazeActivity
 icon = activity-maze
-activity_version = 28
-host_version = 1
+activity_version = 28.1
 license = GPLv3+
 bundle_id = vu.lux.olpc.Maze
 summary = Good at finding your way out of hard situations? Let's see! Try to make your way through an increasingly difficult path, or you can also play with a friend!
