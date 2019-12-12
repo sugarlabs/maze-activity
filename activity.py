@@ -37,6 +37,8 @@ class MazeActivity(activity.Activity):
 
         if 'state' in self.metadata:
             self.state = json.loads(self.metadata['state'])
+            if 'risk' not in self.state:
+                self.state['risk'] = 0
         else:
             self.state = None
 
