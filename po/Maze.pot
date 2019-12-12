@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-09-18 17:48+1000\n"
+"POT-Creation-Date: 2019-12-12 12:16+1100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -28,46 +28,50 @@ msgid ""
 "friend!"
 msgstr ""
 
-#: activity.py:57
+#: activity.py:59
 msgid "Joining a maze"
 msgstr ""
 
-#: activity.py:57
+#: activity.py:59
 msgid "Connecting..."
 msgstr ""
 
-#: activity.py:101
+#: activity.py:103
 msgid "Easier level"
 msgstr ""
 
-#: activity.py:106
+#: activity.py:108
 msgid "Harder level"
 msgstr ""
 
-#: activity.py:115
+#: activity.py:113
+msgid "Make risk"
+msgstr ""
+
+#: activity.py:124
 msgid "Show trail"
 msgstr ""
 
-#: activity.py:148
+#: activity.py:168
 msgid "Sharing"
 msgstr ""
 
-#: activity.py:148
+#: activity.py:168
 msgid "This maze is shared."
 msgstr ""
 
-#: activity.py:196
+#: activity.py:216
 msgid "Tablet mode detected."
 msgstr ""
 
-#: activity.py:197
+#: activity.py:217
 msgid "Hold your XO flat and tilt to play!"
 msgstr ""
 
-#: game.py:722
+#: game.py:799
 msgid "Maze solved!"
 msgstr ""
 
-#: game.py:778
+#: game.py:855
 msgid "Play again?"
 msgstr ""
