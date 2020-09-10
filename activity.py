@@ -56,6 +56,7 @@ class MazeActivity(activity.Activity):
         self.my_key = profile.get_pubkey()
         self._alert = None
 
+        self._joining_hide = False
         if self.shared_activity:
             # we are joining the activity
             self._add_alert(_('Joining a maze'), _('Connecting...'))
@@ -63,6 +64,10 @@ class MazeActivity(activity.Activity):
             if self.get_shared():
                 # we have already joined
                 self._joined_cb(self)
+            else:
+                self.get_canvas().hide()
+                self.busy()
+                self._joining_hide = True
         else:
             # we are creating the activity
             self.connect('shared', self._shared_cb)
@@ -193,6 +198,9 @@ class MazeActivity(activity.Activity):
         if buddy == self.owner:
             return
         self.game.msg_received(buddy, text)
+        if self._joining_hide:
+            self.get_canvas().show()
+            self.unbusy()
 
     def _add_alert(self, title, text=None):
         self.grab_focus()
