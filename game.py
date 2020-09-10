@@ -686,7 +686,7 @@ class MazeGame(Gtk.DrawingArea):
             elapsed = message[7:]
             player.elapsed = float(elapsed)
 
-            self.show_finish_window(player)
+            GLib.idle_add(self.show_finish_window, player)
         elif message.startswith("show_trail:"):
             show_trail = message.endswith('True')
             self._activity.show_trail_button.set_active(show_trail)
@@ -740,7 +740,7 @@ class MazeGame(Gtk.DrawingArea):
                 player == self.localplayers[0]:
             self._activity.broadcast_msg("finish:%.2f" % player.elapsed)
 
-        self.show_finish_window(player)
+        GLib.idle_add(self.show_finish_window, player)
 
     def show_finish_window(self, player):
         """ check if the game is over, and if true show the finish window """
