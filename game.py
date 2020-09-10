@@ -723,6 +723,9 @@ class MazeGame(Gtk.DrawingArea):
     def set_risk(self, risk):
         self._restart(self.maze.width, self.maze.height, risk)
 
+    def restart(self):
+        self._restart(self.maze.width, self.maze.height, self.maze.risk)
+
     def _restart(self, newWidth, newHeight, risk):
         self._activity.busy()
         self.maze = Maze(self.maze.seed + 1, newWidth, newHeight, risk)
@@ -864,6 +867,10 @@ class FinishWindow(Gtk.Window):
         buttons_grid.set_border_width(style.DEFAULT_SPACING)
         buttons_grid.set_orientation(Gtk.Orientation.HORIZONTAL)
 
+        restart_button = ToolButton('media-playback-start')
+        restart_button.connect('clicked', self._restart_button_cb)
+        buttons_grid.add(restart_button)
+
         easier_button = ToolButton('create-easier')
         easier_button.connect('clicked', self._easier_button_cb)
         buttons_grid.add(easier_button)
@@ -888,6 +895,9 @@ class FinishWindow(Gtk.Window):
 
     def _easier_button_cb(self, button):
         GLib.idle_add(self._game.easier)
+
+    def _restart_button_cb(self, button):
+        GLib.idle_add(self._game.restart)
 
     def _harder_button_cb(self, button):
         GLib.idle_add(self._game.harder)
