@@ -899,7 +899,13 @@ class FinishWindow(Gtk.Window):
         GLib.idle_add(self._game.harder)
 
     def __key_press_event_cb(self, window, event):
-        if event.keyval == Gdk.KEY_Escape:
+        if event.keyval == Gdk.KEY_r:
+            GLib.idle_add(self._game.restart)
+        elif event.keyval == Gdk.KEY_e:
+            GLib.idle_add(self._game.easier)
+        elif event.keyval == Gdk.KEY_h:
+            GLib.idle_add(self._game.harder)
+        elif event.keyval == Gdk.KEY_Escape:
             GLib.idle_add(self._game.close_finish_window)
         elif event.keyval == Gdk.KEY_q and \
                 event.state & Gdk.ModifierType.CONTROL_MASK != 0:
