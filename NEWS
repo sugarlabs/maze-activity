@@ -1,3 +1,10 @@
+28.3
+
+* Show finish window after player finishes (James Cameron),
+* Change finish window default action to restart (James Cameron),
+* Add finish window accelerators (James Cameron),
+* Hide canvas during join (James Cameron),
+
 28.2
 
 * Fix fail to start with existing Journal entries (James Cameron),
