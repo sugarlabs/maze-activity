@@ -123,6 +123,11 @@ class MazeActivity(activity.Activity):
         self._risk_button.connect('toggled', self._make_risk_button_cb)
         toolbar_box.toolbar.insert(self._risk_button, -1)
 
+        self._mode_button = ToggleToolButton('mode')
+        self._mode_button.set_tooltip(_('Light/Dark Mode'))
+        self._mode_button.connect('toggled', self._mode_button_cb)
+        toolbar_box.toolbar.insert(self._mode_button, -1)
+
         separator = Gtk.SeparatorToolItem()
         toolbar_box.toolbar.insert(separator, -1)
         separator.show()
@@ -165,6 +170,13 @@ class MazeActivity(activity.Activity):
 
     def _harder_button_cb(self, button):
         self.game.harder()
+
+    def set_mode(self, mode):
+        self._mode_button.set_active(mode)
+        self._mode_button.connect('toggled', self._mode_button_cb)
+
+    def _mode_button_cb(self, button):
+        self.game.mode(int(button.get_active()))
 
     def _toggled_show_trail_cb(self, button):
         if self.game.set_show_trail(button.get_active()):
