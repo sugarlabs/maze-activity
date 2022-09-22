@@ -56,6 +56,7 @@ class MazeActivity(activity.Activity):
         self.my_key = profile.get_pubkey()
         self._alert = None
 
+        self._joining_hide = False
         if self.shared_activity:
             # we are joining the activity
             self._add_alert(_('Joining a maze'), _('Connecting...'))
@@ -63,6 +64,10 @@ class MazeActivity(activity.Activity):
             if self.get_shared():
                 # we have already joined
                 self._joined_cb(self)
+            else:
+                self.get_canvas().hide()
+                self.busy()
+                self._joining_hide = True
         else:
             # we are creating the activity
             self.connect('shared', self._shared_cb)
@@ -118,6 +123,11 @@ class MazeActivity(activity.Activity):
         self._risk_button.connect('toggled', self._make_risk_button_cb)
         toolbar_box.toolbar.insert(self._risk_button, -1)
 
+        self._mode_button = ToggleToolButton('mode')
+        self._mode_button.set_tooltip(_('Light/Dark Mode'))
+        self._mode_button.connect('toggled', self._mode_button_cb)
+        toolbar_box.toolbar.insert(self._mode_button, -1)
+
         separator = Gtk.SeparatorToolItem()
         toolbar_box.toolbar.insert(separator, -1)
         separator.show()
@@ -161,6 +171,13 @@ class MazeActivity(activity.Activity):
     def _harder_button_cb(self, button):
         self.game.harder()
 
+    def set_mode(self, mode):
+        self._mode_button.set_active(mode)
+        self._mode_button.connect('toggled', self._mode_button_cb)
+
+    def _mode_button_cb(self, button):
+        self.game.mode(int(button.get_active()))
+
     def _toggled_show_trail_cb(self, button):
         if self.game.set_show_trail(button.get_active()):
             self.broadcast_msg('show_trail:%s' % str(button.get_active()))
@@ -193,6 +210,9 @@ class MazeActivity(activity.Activity):
         if buddy == self.owner:
             return
         self.game.msg_received(buddy, text)
+        if self._joining_hide:
+            self.get_canvas().show()
+            self.unbusy()
 
     def _add_alert(self, title, text=None):
         self.grab_focus()

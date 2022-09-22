@@ -52,6 +52,15 @@ class MazeGame(Gtk.DrawingArea):
     EMPTY_COLOR = (203.0 / 256.0, 203.0 / 256.0, 203.0 / 256.0)
     SOLID_COLOR = (28.0 / 256.0, 28.0 / 256.0, 28.0 / 256.0)
 
+    def mode(self, light_mode):
+        if light_mode:
+            self.EMPTY_COLOR = (28.0 / 256.0, 28.0 / 256.0, 28.0 / 256.0)
+            self.SOLID_COLOR = (203.0 / 256.0, 203.0 / 256.0, 203.0 / 256.0)
+        else:
+            self.EMPTY_COLOR = (203.0 / 256.0, 203.0 / 256.0, 203.0 / 256.0)
+            self.SOLID_COLOR = (28.0 / 256.0, 28.0 / 256.0, 28.0 / 256.0)
+        self._recalculate_sizes(self.get_allocation())
+
     GOAL_COLOR = (0.0, 1.0, 0.0)
     HOLE_COLOR = (1.0, 0.0, 0.0)
     PASSED_COLOR = (0, 0.5, 0.5)
