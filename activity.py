@@ -123,8 +123,8 @@ class MazeActivity(activity.Activity):
         self._risk_button.connect('toggled', self._make_risk_button_cb)
         toolbar_box.toolbar.insert(self._risk_button, -1)
 
-        self._mode_button = ToggleToolButton('mode')
-        self._mode_button.set_tooltip(_('Light/Dark Mode'))
+        self._mode_button = ToggleToolButton('light-theme')
+        self._mode_button.set_tooltip(_('Switch to Light Theme'))
         self._mode_button.connect('toggled', self._mode_button_cb)
         toolbar_box.toolbar.insert(self._mode_button, -1)
 
@@ -171,12 +171,21 @@ class MazeActivity(activity.Activity):
     def _harder_button_cb(self, button):
         self.game.harder()
 
+    def _update_mode(self, light_mode):
+        if light_mode:
+            self._mode_button.set_icon_name('dark-theme')
+            self._mode_button.set_tooltip('Switch to Dark Theme')
+        else:
+            self._mode_button.set_icon_name('light-theme')
+            self._mode_button.set_tooltip('Switch to Light Theme')
+
     def set_mode(self, mode):
         self._mode_button.set_active(mode)
         self._mode_button.connect('toggled', self._mode_button_cb)
 
     def _mode_button_cb(self, button):
         self.game.mode(int(button.get_active()))
+        self._update_mode(int(button.get_active()))
 
     def _toggled_show_trail_cb(self, button):
         if self.game.set_show_trail(button.get_active()):
