@@ -184,8 +184,8 @@ class MazeActivity(activity.Activity):
         self._mode_button.connect('toggled', self._mode_button_cb)
 
     def _mode_button_cb(self, button):
-        self.game.mode(int(button.get_active()))
-        self._update_mode(int(button.get_active()))
+        self.game.mode(button.get_active())
+        self._update_mode(button.get_active())
 
     def _toggled_show_trail_cb(self, button):
         if self.game.set_show_trail(button.get_active()):
