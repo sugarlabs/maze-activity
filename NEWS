@@ -1,3 +1,11 @@
+31
+
+* Added Dark/Light Mode Button (Souabha G),
+* Hide canvas during join (James Cameron),
+* Add finish window accelerators (James Cameron),
+* Change default finish window action to restart (James Cameron),
+* Show finish window after player finishes (James Cameron),
+
 30
 
 * Add README.md (Ayush Nawal),
