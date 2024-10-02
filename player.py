@@ -133,7 +133,7 @@ class Player:
     def animate(self, maze, size, change_direction=True):
         # if player is falling
         if self.falling > 0:
-            self.falling -= max(1, int(size / 4))
+            self.falling -= max(1, int(size / 6))
             if self.falling <= 20:
                 self.falling = 0
                 self.reset()

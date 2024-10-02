@@ -520,7 +520,7 @@ class MazeGame(Gtk.DrawingArea):
 
             if change_direction:
                 if player.direction != (0, 0):
-                    GLib.timeout_add(100, self.player_walk, player)
+                    GLib.timeout_add(200, self.player_walk, player)
             else:
                 # if we have peers and the player is the main local player
                 if len(self.remoteplayers) > 0 and \
