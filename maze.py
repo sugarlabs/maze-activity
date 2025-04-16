@@ -25,6 +25,7 @@
 import random
 import logging
 
+print("maze.py is running")
 
 class Rectangle:
 
