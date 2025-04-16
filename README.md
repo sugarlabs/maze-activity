@@ -9,10 +9,6 @@ To Know more about sugar, Please refer to;
 
 ## 🧪 How to run this activity (for WSL users)
 
-If you're using WSL (Windows Subsystem for Linux) on Windows, follow the steps below to run the Maze activity inside Ubuntu.  
-
-## 🧪 How to run this activity (for WSL users)
-
 If you're using WSL (Windows Subsystem for Linux) on Windows, follow the steps below to run the Maze activity inside Ubuntu.
 
 ---
