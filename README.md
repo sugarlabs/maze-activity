@@ -12,9 +12,10 @@ To Know more about sugar, Please refer to;
 If you're using WSL (Windows Subsystem for Linux) on Windows, follow the steps below to run the Maze activity inside Ubuntu.  
 
 ---
-### 1.install wsl and ubuntu
+### Steps:
+1.install wsl and ubuntu
 
-open PowerShell as Administrator and run,restart your pc:
+open PowerShell as Administrator and run, restart your pc:
 
 ```powershell
 wsl --install
